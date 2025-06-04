@@ -1,0 +1,25 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Debug React Native",
+        "type": "reactnative",
+        "request": "launch",
+        "platform": "android"
+      },
+      {
+        "name": "Debug iOS",
+        "type": "reactnative",
+        "request": "launch",
+        "platform": "ios"
+      },
+      {
+        "name": "Debug in Browser",
+        "type": "node",
+        "request": "launch",
+        "program": "${workspaceFolder}/node_modules/.bin/expo",
+        "args": ["start", "--web"],
+        "console": "integratedTerminal"
+      }
+    ]
+  }

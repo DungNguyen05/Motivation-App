@@ -1,0 +1,56 @@
+{
+    "expo": {
+      "name": "Reminder App",
+      "slug": "reminder-app",
+      "version": "1.0.0",
+      "orientation": "portrait",
+      "icon": "./assets/icon.png",
+      "userInterfaceStyle": "light",
+      "splash": {
+        "image": "./assets/splash.png",
+        "resizeMode": "contain",
+        "backgroundColor": "#ffffff"
+      },
+      "assetBundlePatterns": [
+        "**/*"
+      ],
+      "ios": {
+        "supportsTablet": true,
+        "bundleIdentifier": "com.yourcompany.reminderapp",
+        "infoPlist": {
+          "UIBackgroundModes": ["background-processing"],
+          "NSUserNotificationUsageDescription": "This app uses notifications to remind you of your scheduled reminders."
+        }
+      },
+      "android": {
+        "adaptiveIcon": {
+          "foregroundImage": "./assets/adaptive-icon.png",
+          "backgroundColor": "#FFFFFF"
+        },
+        "package": "com.yourcompany.reminderapp",
+        "permissions": [
+          "android.permission.RECEIVE_BOOT_COMPLETED",
+          "android.permission.VIBRATE",
+          "android.permission.WAKE_LOCK"
+        ]
+      },
+      "web": {
+        "favicon": "./assets/favicon.png"
+      },
+      "plugins": [
+        [
+          "expo-notifications",
+          {
+            "icon": "./assets/notification-icon.png",
+            "color": "#ffffff",
+            "defaultChannel": "default"
+          }
+        ]
+      ],
+      "extra": {
+        "eas": {
+          "projectId": "your-project-id-here"
+        }
+      }
+    }
+  }

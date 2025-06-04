@@ -1,0 +1,21 @@
+{
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.fixAll.eslint": true,
+      "source.organizeImports": true
+    },
+    "typescript.preferences.importModuleSpecifier": "relative",
+    "emmet.includeLanguages": {
+      "javascript": "javascriptreact",
+      "typescript": "typescriptreact"
+    },
+    "files.associations": {
+      "*.js": "javascriptreact"
+    },
+    "editor.suggestSelection": "first",
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.minimap.enabled": false,
+    "workbench.colorTheme": "Default Dark+",
+    "terminal.integrated.defaultProfile.windows": "Command Prompt"
+  }
