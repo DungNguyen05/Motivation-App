@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from 'react-native-uuid';
+import * as Crypto from 'expo-crypto';
 import { Reminder } from '../types';
 import { NotificationService } from './NotificationService';
 import { StorageService } from './StorageService';
@@ -44,7 +44,7 @@ export class ReminderService {
 
       // Create reminder object
       const reminder: Reminder = {
-        id: uuidv4() as string,
+        id: Crypto.randomUUID(),
         message: message.trim(),
         dateTime,
         notificationId,

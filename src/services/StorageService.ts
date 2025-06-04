@@ -14,10 +14,24 @@ export class StorageService {
     return StorageService.instance;
   }
 
+  private async withTimeout<T>(
+    promise: Promise<T>, 
+    timeoutMs: number = 5000
+  ): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error('Storage operation timeout')), timeoutMs)
+      )
+    ]);
+  }
+
   async saveReminders(reminders: Reminder[]): Promise<void> {
     try {
       const jsonValue = JSON.stringify(reminders);
-      await AsyncStorage.setItem(this.REMINDERS_KEY, jsonValue);
+      await this.withTimeout(
+        AsyncStorage.setItem(this.REMINDERS_KEY, jsonValue)
+      );
     } catch (error) {
       console.error('Error saving reminders:', error);
       throw error;
@@ -26,7 +40,10 @@ export class StorageService {
 
   async loadReminders(): Promise<Reminder[]> {
     try {
-      const jsonValue = await AsyncStorage.getItem(this.REMINDERS_KEY);
+      const jsonValue = await this.withTimeout(
+        AsyncStorage.getItem(this.REMINDERS_KEY)
+      );
+      
       if (jsonValue === null) {
         return [];
       }
@@ -83,7 +100,9 @@ export class StorageService {
 
   async clearAllReminders(): Promise<void> {
     try {
-      await AsyncStorage.removeItem(this.REMINDERS_KEY);
+      await this.withTimeout(
+        AsyncStorage.removeItem(this.REMINDERS_KEY)
+      );
     } catch (error) {
       console.error('Error clearing reminders:', error);
       throw error;

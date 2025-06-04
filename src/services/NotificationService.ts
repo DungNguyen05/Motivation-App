@@ -15,6 +15,35 @@ export class NotificationService {
     return NotificationService.instance;
   }
 
+  private async withTimeout<T>(
+    promise: Promise<T>, 
+    timeoutMs: number = 10000
+  ): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) => 
+        setTimeout(() => reject(new Error('Notification operation timeout')), timeoutMs)
+      )
+    ]);
+  }
+
+  private async requestPermissions(): Promise<boolean> {
+    try {
+      const { status: existingStatus } = await Notifications.getPermissionsAsync();
+      let finalStatus = existingStatus;
+
+      if (existingStatus !== 'granted') {
+        const { status } = await Notifications.requestPermissionsAsync();
+        finalStatus = status;
+      }
+
+      return finalStatus === 'granted';
+    } catch (error) {
+      console.error('Error requesting permissions:', error);
+      return false;
+    }
+  }
+
   async initialize(): Promise<boolean> {
     try {
       // Configure notification behavior
@@ -26,29 +55,29 @@ export class NotificationService {
         }),
       });
 
-      // Request permissions
-      const { status: existingStatus } = await Notifications.getPermissionsAsync();
-      let finalStatus = existingStatus;
+      // Request permissions with timeout
+      const hasPermission = await this.withTimeout(
+        this.requestPermissions(),
+        15000 // 15 seconds timeout for permissions
+      );
 
-      if (existingStatus !== 'granted') {
-        const { status } = await Notifications.requestPermissionsAsync();
-        finalStatus = status;
-      }
-
-      if (finalStatus !== 'granted') {
+      if (!hasPermission) {
         console.log('Failed to get push token for push notification!');
         return false;
       }
 
       // Configure notification channel for Android
       if (Platform.OS === 'android') {
-        await Notifications.setNotificationChannelAsync('default', {
-          name: 'Reminders',
-          importance: Notifications.AndroidImportance.MAX,
-          vibrationPattern: [0, 250, 250, 250],
-          lightColor: '#FF231F7C',
-          sound: 'default',
-        });
+        await this.withTimeout(
+          Notifications.setNotificationChannelAsync('default', {
+            name: 'Reminders',
+            importance: Notifications.AndroidImportance.MAX,
+            vibrationPattern: [0, 250, 250, 250],
+            lightColor: '#FF231F7C',
+            sound: 'default',
+          }),
+          5000
+        );
       }
 
       return true;
@@ -64,17 +93,20 @@ export class NotificationService {
     scheduledDate: Date
   ): Promise<string | null> {
     try {
-      const notificationId = await Notifications.scheduleNotificationAsync({
-        content: {
-          title,
-          body,
-          sound: 'default',
-          priority: Notifications.AndroidNotificationPriority.HIGH,
-        },
-        trigger: {
-          date: scheduledDate,
-        },
-      });
+      const notificationId = await this.withTimeout(
+        Notifications.scheduleNotificationAsync({
+          content: {
+            title,
+            body,
+            sound: 'default',
+            priority: Notifications.AndroidNotificationPriority.HIGH,
+          },
+          trigger: {
+            date: scheduledDate,
+          },
+        }),
+        8000
+      );
 
       return notificationId;
     } catch (error) {
@@ -85,7 +117,10 @@ export class NotificationService {
 
   async cancelNotification(notificationId: string): Promise<void> {
     try {
-      await Notifications.cancelScheduledNotificationAsync(notificationId);
+      await this.withTimeout(
+        Notifications.cancelScheduledNotificationAsync(notificationId),
+        5000
+      );
     } catch (error) {
       console.error('Error cancelling notification:', error);
     }
@@ -93,7 +128,10 @@ export class NotificationService {
 
   async cancelAllNotifications(): Promise<void> {
     try {
-      await Notifications.cancelAllScheduledNotificationsAsync();
+      await this.withTimeout(
+        Notifications.cancelAllScheduledNotificationsAsync(),
+        8000
+      );
     } catch (error) {
       console.error('Error cancelling all notifications:', error);
     }
@@ -101,7 +139,10 @@ export class NotificationService {
 
   async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
     try {
-      return await Notifications.getAllScheduledNotificationsAsync();
+      return await this.withTimeout(
+        Notifications.getAllScheduledNotificationsAsync(),
+        5000
+      );
     } catch (error) {
       console.error('Error getting scheduled notifications:', error);
       return [];

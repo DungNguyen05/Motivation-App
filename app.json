@@ -11,9 +11,7 @@
         "resizeMode": "contain",
         "backgroundColor": "#ffffff"
       },
-      "assetBundlePatterns": [
-        "**/*"
-      ],
+      "assetBundlePatterns": ["**/*"],
       "ios": {
         "supportsTablet": true,
         "bundleIdentifier": "com.yourcompany.reminderapp",
@@ -47,10 +45,8 @@
           }
         ]
       ],
-      "extra": {
-        "eas": {
-          "projectId": "your-project-id-here"
-        }
+      "runtimeVersion": {
+        "policy": "sdkVersion"
       }
     }
   }
