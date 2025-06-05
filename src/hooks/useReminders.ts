@@ -25,9 +25,19 @@ export const useReminders = () => {
     }
   }, [reminderService]);
 
-  const addReminder = useCallback(async (message: string, dateTime: Date) => {
+  const addReminder = useCallback(async (message: string, dateTime: Date): Promise<boolean> => {
     try {
       setError(null);
+      
+      // Client-side validation
+      if (!message.trim()) {
+        throw new Error('Please enter a reminder message');
+      }
+      
+      if (dateTime <= new Date()) {
+        throw new Error('Please select a future date and time');
+      }
+      
       const newReminder = await reminderService.createReminder(message, dateTime);
       
       if (newReminder) {
@@ -39,8 +49,8 @@ export const useReminders = () => {
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create reminder';
       setError(errorMessage);
-      Alert.alert('Error', errorMessage);
-      return false;
+      console.error('Error adding reminder:', err);
+      throw err; // Re-throw for component to handle
     }
   }, [reminderService]);
 
@@ -62,6 +72,7 @@ export const useReminders = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to cancel reminder';
       setError(errorMessage);
       Alert.alert('Error', errorMessage);
+      console.error('Error cancelling reminder:', err);
     }
   }, [reminderService]);
 
@@ -76,6 +87,7 @@ export const useReminders = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete reminder';
       setError(errorMessage);
       Alert.alert('Error', errorMessage);
+      console.error('Error deleting reminder:', err);
     }
   }, [reminderService]);
 
@@ -89,24 +101,37 @@ export const useReminders = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to clear reminders';
       setError(errorMessage);
       Alert.alert('Error', errorMessage);
+      console.error('Error clearing reminders:', err);
     }
   }, [reminderService]);
 
   const getActiveReminders = useCallback(() => {
+    const now = new Date();
     return reminders.filter(reminder => 
-      reminder.isActive && reminder.dateTime > new Date()
+      reminder.isActive && new Date(reminder.dateTime) > now
     );
   }, [reminders]);
 
   const getExpiredReminders = useCallback(() => {
+    const now = new Date();
     return reminders.filter(reminder => 
-      reminder.dateTime <= new Date()
+      new Date(reminder.dateTime) <= now
     );
   }, [reminders]);
 
   const refreshReminders = useCallback(() => {
     loadReminders();
   }, [loadReminders]);
+
+  // Auto-refresh every minute to update status
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Force re-render to update "expired" status
+      setReminders(prev => [...prev]);
+    }, 60000); // 1 minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     loadReminders();

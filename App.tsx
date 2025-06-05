@@ -17,11 +17,13 @@ import { AddReminderForm } from './src/components/AddReminderForm';
 import { ReminderItem } from './src/components/ReminderItem';
 import { useReminders } from './src/hooks/useReminders';
 import { NotificationService } from './src/services/NotificationService';
+import { ReminderService } from './src/services/ReminderService';
 import { Reminder } from './src/types';
 
 export default function App() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   const {
     reminders,
@@ -40,8 +42,24 @@ export default function App() {
     setupNotificationListeners();
   }, []);
 
+  // Sync notifications when app becomes active
+  useEffect(() => {
+    const syncOnFocus = async () => {
+      try {
+        const reminderService = ReminderService.getInstance();
+        await reminderService.syncNotifications();
+      } catch (error) {
+        console.error('Error syncing notifications:', error);
+      }
+    };
+
+    // Sync when component mounts
+    syncOnFocus();
+  }, []);
+
   const initializeApp = async () => {
     try {
+      setIsInitializing(true);
       const notificationService = NotificationService.getInstance();
       const hasPermission = await notificationService.initialize();
       setNotificationPermission(hasPermission);
@@ -49,13 +67,24 @@ export default function App() {
       if (!hasPermission) {
         Alert.alert(
           'Notification Permission Required',
-          'This app needs notification permission to send you reminders. Please enable it in settings.',
-          [{ text: 'OK' }]
+          'This app needs notification permission to send you reminders. Please enable it in your device settings.',
+          [
+            { text: 'OK' },
+            { 
+              text: 'Settings', 
+              onPress: () => {
+                // You might want to add a link to settings here
+                console.log('Navigate to settings');
+              }
+            }
+          ]
         );
       }
     } catch (error) {
       console.error('Error initializing app:', error);
-      Alert.alert('Error', 'Failed to initialize the app');
+      Alert.alert('Error', 'Failed to initialize the app. Please restart the application.');
+    } finally {
+      setIsInitializing(false);
     }
   };
 
@@ -71,6 +100,7 @@ export default function App() {
       response => {
         console.log('Notification response:', response);
         // Handle notification tap if needed
+        // You could navigate to specific reminder or mark as completed
       }
     );
 
@@ -80,10 +110,17 @@ export default function App() {
     };
   };
 
-  const handleAddReminder = async (message: string, dateTime: Date) => {
-    const success = await addReminder(message, dateTime);
-    if (success) {
-      setShowAddForm(false);
+  const handleAddReminder = async (message: string, dateTime: Date): Promise<boolean> => {
+    try {
+      const success = await addReminder(message, dateTime);
+      if (success) {
+        setShowAddForm(false);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      // Error is already handled in useReminders hook
+      return false;
     }
   };
 
@@ -93,9 +130,14 @@ export default function App() {
       return;
     }
 
+    const activeCount = getActiveReminders().length;
+    const message = activeCount > 0 
+      ? `This will clear all ${reminders.length} reminders (${activeCount} active). This action cannot be undone.`
+      : `This will clear all ${reminders.length} reminders. This action cannot be undone.`;
+
     Alert.alert(
       'Clear All Reminders',
-      'Are you sure you want to clear all reminders? This action cannot be undone.',
+      message,
       [
         { text: 'Cancel', style: 'cancel' },
         { 
@@ -117,6 +159,7 @@ export default function App() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
+      <Text style={styles.emptyStateIcon}>📝</Text>
       <Text style={styles.emptyStateTitle}>No Reminders</Text>
       <Text style={styles.emptyStateText}>
         Tap the "Add Reminder" button to create your first reminder
@@ -130,7 +173,7 @@ export default function App() {
       {!notificationPermission && (
         <View style={styles.permissionWarning}>
           <Text style={styles.permissionWarningText}>
-            ⚠️ Notifications disabled - reminders won't work
+            ⚠️ Notifications disabled - reminders won't work properly
           </Text>
         </View>
       )}
@@ -141,6 +184,17 @@ export default function App() {
       </View>
     </View>
   );
+
+  if (isInitializing) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ExpoStatusBar style="dark" />
+        <View style={styles.loadingContainer}>
+          <Text style={styles.loadingText}>Initializing app...</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   if (showAddForm) {
     return (
@@ -159,6 +213,16 @@ export default function App() {
     );
   }
 
+  // Sort reminders: active first, then by date
+  const sortedReminders = [...reminders].sort((a, b) => {
+    // First sort by active status
+    if (a.isActive && !b.isActive) return -1;
+    if (!a.isActive && b.isActive) return 1;
+    
+    // Then sort by date
+    return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+  });
+
   return (
     <SafeAreaView style={styles.container}>
       <ExpoStatusBar style="dark" />
@@ -167,22 +231,29 @@ export default function App() {
       
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>Error: {error}</Text>
+          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <TouchableOpacity 
+            style={styles.retryButton} 
+            onPress={() => {
+              refreshReminders();
+            }}
+          >
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
         </View>
       )}
 
       <FlatList
-        data={reminders.sort((a, b) => 
-          new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime()
-        )}
+        data={sortedReminders}
         renderItem={renderReminderItem}
         keyExtractor={(item) => item.id}
         style={styles.list}
-        contentContainerStyle={reminders.length === 0 ? styles.emptyListContainer : undefined}
+        contentContainerStyle={reminders.length === 0 ? styles.emptyListContainer : styles.listContent}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refreshReminders} />
         }
+        showsVerticalScrollIndicator={false}
       />
 
       <View style={styles.bottomActions}>
@@ -211,6 +282,15 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f5f5f5',
   },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    fontSize: 16,
+    color: '#666',
+  },
   header: {
     backgroundColor: '#fff',
     paddingHorizontal: 20,
@@ -230,11 +310,14 @@ const styles = StyleSheet.create({
     padding: 8,
     borderRadius: 6,
     marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#ffc107',
   },
   permissionWarningText: {
     color: '#856404',
     fontSize: 12,
     textAlign: 'center',
+    fontWeight: '500',
   },
   stats: {
     alignItems: 'center',
@@ -242,6 +325,7 @@ const styles = StyleSheet.create({
   statsText: {
     fontSize: 14,
     color: '#666',
+    fontWeight: '500',
   },
   formHeader: {
     backgroundColor: '#fff',
@@ -261,6 +345,9 @@ const styles = StyleSheet.create({
   list: {
     flex: 1,
   },
+  listContent: {
+    paddingBottom: 20,
+  },
   emptyListContainer: {
     flex: 1,
   },
@@ -269,6 +356,10 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 40,
+  },
+  emptyStateIcon: {
+    fontSize: 48,
+    marginBottom: 16,
   },
   emptyStateTitle: {
     fontSize: 24,
@@ -290,11 +381,26 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#f5c6cb',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
   errorText: {
     color: '#721c24',
     fontSize: 14,
-    textAlign: 'center',
+    flex: 1,
+    marginRight: 12,
+  },
+  retryButton: {
+    backgroundColor: '#721c24',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 4,
+  },
+  retryButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '500',
   },
   bottomActions: {
     flexDirection: 'row',

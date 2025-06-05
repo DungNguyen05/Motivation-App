@@ -37,6 +37,7 @@ export class NotificationService {
         finalStatus = status;
       }
 
+      console.log('Notification permission status:', finalStatus);
       return finalStatus === 'granted';
     } catch (error) {
       console.error('Error requesting permissions:', error);
@@ -46,10 +47,13 @@ export class NotificationService {
 
   async initialize(): Promise<boolean> {
     try {
+      console.log('Initializing notification service...');
+      
       // Configure notification behavior
       Notifications.setNotificationHandler({
         handleNotification: async () => ({
-          shouldShowAlert: true,
+          shouldShowBanner: true,
+          shouldShowList: true,
           shouldPlaySound: true,
           shouldSetBadge: false,
         }),
@@ -62,7 +66,7 @@ export class NotificationService {
       );
 
       if (!hasPermission) {
-        console.log('Failed to get push token for push notification!');
+        console.log('Failed to get notification permissions');
         return false;
       }
 
@@ -75,11 +79,14 @@ export class NotificationService {
             vibrationPattern: [0, 250, 250, 250],
             lightColor: '#FF231F7C',
             sound: 'default',
+            description: 'Notifications for your reminders',
           }),
           5000
         );
+        console.log('Android notification channel configured');
       }
 
+      console.log('Notification service initialized successfully');
       return true;
     } catch (error) {
       console.error('Error initializing notifications:', error);
@@ -93,6 +100,13 @@ export class NotificationService {
     scheduledDate: Date
   ): Promise<string | null> {
     try {
+      // Validate input
+      if (scheduledDate <= new Date()) {
+        throw new Error('Cannot schedule notification for past time');
+      }
+
+      console.log('Scheduling notification for:', scheduledDate.toISOString());
+      
       const notificationId = await this.withTimeout(
         Notifications.scheduleNotificationAsync({
           content: {
@@ -100,52 +114,77 @@ export class NotificationService {
             body,
             sound: 'default',
             priority: Notifications.AndroidNotificationPriority.HIGH,
+            categoryIdentifier: 'reminder',
           },
           trigger: {
+            type: Notifications.SchedulableTriggerInputTypes.DATE,
             date: scheduledDate,
           },
         }),
         8000
       );
 
+      console.log(`Notification scheduled with ID: ${notificationId}`);
       return notificationId;
     } catch (error) {
       console.error('Error scheduling notification:', error);
-      return null;
+      throw error; // Re-throw for better error handling upstream
     }
   }
 
   async cancelNotification(notificationId: string): Promise<void> {
     try {
+      console.log(`Cancelling notification: ${notificationId}`);
       await this.withTimeout(
         Notifications.cancelScheduledNotificationAsync(notificationId),
         5000
       );
+      console.log(`Notification cancelled: ${notificationId}`);
     } catch (error) {
       console.error('Error cancelling notification:', error);
+      throw error;
     }
   }
 
   async cancelAllNotifications(): Promise<void> {
     try {
+      console.log('Cancelling all notifications...');
       await this.withTimeout(
         Notifications.cancelAllScheduledNotificationsAsync(),
         8000
       );
+      console.log('All notifications cancelled');
     } catch (error) {
       console.error('Error cancelling all notifications:', error);
+      throw error;
     }
   }
 
   async getScheduledNotifications(): Promise<Notifications.NotificationRequest[]> {
     try {
-      return await this.withTimeout(
+      const notifications = await this.withTimeout(
         Notifications.getAllScheduledNotificationsAsync(),
         5000
       );
+      console.log(`Found ${notifications.length} scheduled notifications`);
+      return notifications;
     } catch (error) {
       console.error('Error getting scheduled notifications:', error);
       return [];
     }
+  }
+
+  async checkPermissionStatus(): Promise<boolean> {
+    try {
+      const { status } = await Notifications.getPermissionsAsync();
+      return status === 'granted';
+    } catch (error) {
+      console.error('Error checking permission status:', error);
+      return false;
+    }
+  }
+
+  async hasPermissions(): Promise<boolean> {
+    return await this.checkPermissionStatus();
   }
 }

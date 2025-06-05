@@ -20,17 +20,56 @@ export const ReminderItem: React.FC<ReminderItemProps> = ({
   onCancel,
 }) => {
   const formatDateTime = (date: Date): string => {
-    return date.toLocaleString('en-US', {
+    const now = new Date();
+    const reminderDate = new Date(date);
+    const diffMs = reminderDate.getTime() - now.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.ceil(diffMs / (1000 * 60));
+    
+    // If it's in the past
+    if (diffMs < 0) {
+      return reminderDate.toLocaleString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+      });
+    }
+    
+    // If it's today
+    if (diffDays === 0) {
+      if (diffHours === 0) {
+        return `In ${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''}`;
+      }
+      return `Today at ${reminderDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`;
+    }
+    
+    // If it's tomorrow
+    if (diffDays === 1) {
+      return `Tomorrow at ${reminderDate.toLocaleTimeString('en-US', {
+        hour: 'numeric',
+        minute: '2-digit',
+      })}`;
+    }
+    
+    // For other days
+    return reminderDate.toLocaleString('en-US', {
       weekday: 'short',
-      year: 'numeric',
       month: 'short',
       day: 'numeric',
-      hour: '2-digit',
+      hour: 'numeric',
       minute: '2-digit',
     });
   };
 
-  const isExpired = reminder.dateTime <= new Date();
+  // Fixed date comparison
+  const reminderDateTime = new Date(reminder.dateTime);
+  const isExpired = reminderDateTime <= new Date();
   const isActive = reminder.isActive && !isExpired;
 
   const handleDelete = () => {
@@ -55,6 +94,12 @@ export const ReminderItem: React.FC<ReminderItemProps> = ({
     );
   };
 
+  const getStatusIcon = () => {
+    if (!reminder.isActive) return '⚪';
+    if (isExpired) return '🔴';
+    return '🟢';
+  };
+
   return (
     <View style={[styles.container, !isActive && styles.inactiveContainer]}>
       <View style={styles.content}>
@@ -62,9 +107,10 @@ export const ReminderItem: React.FC<ReminderItemProps> = ({
           {reminder.message}
         </Text>
         <Text style={[styles.dateTime, !isActive && styles.inactiveText]}>
-          {formatDateTime(reminder.dateTime)}
+          {formatDateTime(reminderDateTime)}
         </Text>
         <View style={styles.statusContainer}>
+          <Text style={styles.statusIcon}>{getStatusIcon()}</Text>
           <Text style={[styles.status, getStatusStyle(reminder, isExpired)]}>
             {getStatusText(reminder, isExpired)}
           </Text>
@@ -142,7 +188,13 @@ const styles = StyleSheet.create({
     color: '#999',
   },
   statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     alignSelf: 'flex-start',
+  },
+  statusIcon: {
+    fontSize: 12,
+    marginRight: 6,
   },
   status: {
     fontSize: 12,
