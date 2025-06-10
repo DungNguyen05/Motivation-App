@@ -20,7 +20,7 @@ export class ReminderService {
     return ReminderService.instance;
   }
 
-  async createReminder(message: string, dateTime: Date): Promise<Reminder | null> {
+  async createReminder(message: string, dateTime: Date, category?: string, isAIGenerated?: boolean): Promise<Reminder | null> {
     try {
       // Validate input
       if (!message.trim()) {
@@ -37,9 +37,8 @@ export class ReminderService {
         if (typeof this.notificationService.checkPermissionStatus === 'function') {
           hasPermission = await this.notificationService.checkPermissionStatus();
         } else {
-          // Fallback: try to schedule a test notification to check permissions
           console.log('Using fallback permission check...');
-          hasPermission = true; // Assume we have permission and let scheduling fail if not
+          hasPermission = true;
         }
         
         if (!hasPermission) {
@@ -47,14 +46,14 @@ export class ReminderService {
         }
       } catch (error) {
         console.warn('Could not check notification permissions, continuing anyway:', error);
-        hasPermission = true; // Continue and let the notification scheduling handle the error
+        hasPermission = true;
       }
 
-      console.log('Creating reminder:', { message: message.trim(), dateTime });
+      console.log('Creating reminder:', { message: message.trim(), dateTime, category, isAIGenerated });
 
       // Schedule notification
       const notificationId = await this.notificationService.scheduleNotification(
-        'Reminder',
+        category ? `${category} Reminder` : 'Reminder',
         message.trim(),
         dateTime
       );
@@ -71,6 +70,8 @@ export class ReminderService {
         notificationId,
         isActive: true,
         createdAt: new Date(),
+        category: category || 'Custom',
+        isAIGenerated: isAIGenerated || false,
       };
 
       // Save to storage
@@ -80,6 +81,50 @@ export class ReminderService {
       return reminder;
     } catch (error) {
       console.error('Error creating reminder:', error);
+      throw error;
+    }
+  }
+
+  async createMultipleReminders(remindersData: Partial<Reminder>[]): Promise<Reminder[]> {
+    try {
+      const createdReminders: Reminder[] = [];
+      const errors: string[] = [];
+
+      for (const reminderData of remindersData) {
+        try {
+          if (!reminderData.message || !reminderData.dateTime) {
+            throw new Error('Missing required reminder data');
+          }
+
+          const reminder = await this.createReminder(
+            reminderData.message,
+            new Date(reminderData.dateTime),
+            reminderData.category,
+            reminderData.isAIGenerated
+          );
+
+          if (reminder) {
+            createdReminders.push(reminder);
+          }
+        } catch (error) {
+          const errorMsg = error instanceof Error ? error.message : 'Unknown error';
+          errors.push(`Failed to create reminder "${reminderData.message}": ${errorMsg}`);
+          console.error('Error creating individual reminder:', error);
+        }
+      }
+
+      if (errors.length > 0 && createdReminders.length === 0) {
+        throw new Error(`Failed to create any reminders: ${errors.join(', ')}`);
+      }
+
+      if (errors.length > 0) {
+        console.warn('Some reminders failed to create:', errors);
+      }
+
+      console.log(`Successfully created ${createdReminders.length} out of ${remindersData.length} reminders`);
+      return createdReminders;
+    } catch (error) {
+      console.error('Error creating multiple reminders:', error);
       throw error;
     }
   }
@@ -100,6 +145,26 @@ export class ReminderService {
       return reminders.filter(r => r.isActive && new Date(r.dateTime) > now);
     } catch (error) {
       console.error('Error loading active reminders:', error);
+      return [];
+    }
+  }
+
+  async getAIGeneratedReminders(): Promise<Reminder[]> {
+    try {
+      const reminders = await this.getAllReminders();
+      return reminders.filter(r => r.isAIGenerated === true);
+    } catch (error) {
+      console.error('Error loading AI-generated reminders:', error);
+      return [];
+    }
+  }
+
+  async getRemindersByCategory(category: string): Promise<Reminder[]> {
+    try {
+      const reminders = await this.getAllReminders();
+      return reminders.filter(r => r.category === category);
+    } catch (error) {
+      console.error('Error loading reminders by category:', error);
       return [];
     }
   }
@@ -171,6 +236,23 @@ export class ReminderService {
     }
   }
 
+  async clearAIReminders(): Promise<void> {
+    try {
+      console.log('Clearing AI-generated reminders...');
+      const reminders = await this.getAllReminders();
+      const aiReminders = reminders.filter(r => r.isAIGenerated === true);
+      
+      for (const reminder of aiReminders) {
+        await this.deleteReminder(reminder.id);
+      }
+      
+      console.log(`Cleared ${aiReminders.length} AI-generated reminders`);
+    } catch (error) {
+      console.error('Error clearing AI reminders:', error);
+      throw error;
+    }
+  }
+
   validateReminderTime(dateTime: Date): boolean {
     return dateTime > new Date();
   }
@@ -195,6 +277,61 @@ export class ReminderService {
     }
   }
 
+  async getReminderStats(): Promise<{
+    total: number;
+    active: number;
+    expired: number;
+    aiGenerated: number;
+    manual: number;
+    categories: { [key: string]: number };
+  }> {
+    try {
+      const reminders = await this.getAllReminders();
+      const now = new Date();
+      
+      const stats = {
+        total: reminders.length,
+        active: 0,
+        expired: 0,
+        aiGenerated: 0,
+        manual: 0,
+        categories: {} as { [key: string]: number },
+      };
+
+      reminders.forEach(reminder => {
+        // Count active/expired
+        if (reminder.isActive && new Date(reminder.dateTime) > now) {
+          stats.active++;
+        } else {
+          stats.expired++;
+        }
+
+        // Count AI vs manual
+        if (reminder.isAIGenerated) {
+          stats.aiGenerated++;
+        } else {
+          stats.manual++;
+        }
+
+        // Count by category
+        const category = reminder.category || 'Custom';
+        stats.categories[category] = (stats.categories[category] || 0) + 1;
+      });
+
+      return stats;
+    } catch (error) {
+      console.error('Error getting reminder stats:', error);
+      return {
+        total: 0,
+        active: 0,
+        expired: 0,
+        aiGenerated: 0,
+        manual: 0,
+        categories: {},
+      };
+    }
+  }
+
   async syncNotifications(): Promise<void> {
     try {
       console.log('Syncing notifications with stored reminders...');
@@ -210,7 +347,7 @@ export class ReminderService {
           
           if (new Date(reminder.dateTime) > new Date()) {
             const newNotificationId = await this.notificationService.scheduleNotification(
-              'Reminder',
+              reminder.category ? `${reminder.category} Reminder` : 'Reminder',
               reminder.message,
               new Date(reminder.dateTime)
             );

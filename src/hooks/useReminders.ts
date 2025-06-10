@@ -54,6 +54,40 @@ export const useReminders = () => {
     }
   }, [reminderService]);
 
+  const addMultipleReminders = useCallback(async (newReminders: Reminder[]): Promise<boolean> => {
+    try {
+      setError(null);
+      
+      if (newReminders.length === 0) {
+        throw new Error('No reminders to add');
+      }
+
+      // Validate all reminders
+      const now = new Date();
+      for (const reminder of newReminders) {
+        if (!reminder.message.trim()) {
+          throw new Error('All reminders must have a message');
+        }
+        if (new Date(reminder.dateTime) <= now) {
+          throw new Error('All reminders must be scheduled for future time');
+        }
+      }
+
+      const createdReminders = await reminderService.createMultipleReminders(newReminders);
+      
+      if (createdReminders.length > 0) {
+        setReminders(prev => [...prev, ...createdReminders]);
+        return true;
+      }
+      return false;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to create reminders';
+      setError(errorMessage);
+      console.error('Error adding multiple reminders:', err);
+      throw err;
+    }
+  }, [reminderService]);
+
   const cancelReminder = useCallback(async (reminderId: string) => {
     try {
       setError(null);
@@ -119,6 +153,18 @@ export const useReminders = () => {
     );
   }, [reminders]);
 
+  const getAIGeneratedReminders = useCallback(() => {
+    return reminders.filter(reminder => reminder.isAIGenerated === true);
+  }, [reminders]);
+
+  const getManualReminders = useCallback(() => {
+    return reminders.filter(reminder => !reminder.isAIGenerated);
+  }, [reminders]);
+
+  const getRemindersByCategory = useCallback((category: string) => {
+    return reminders.filter(reminder => reminder.category === category);
+  }, [reminders]);
+
   const refreshReminders = useCallback(() => {
     loadReminders();
   }, [loadReminders]);
@@ -142,11 +188,15 @@ export const useReminders = () => {
     loading,
     error,
     addReminder,
+    addMultipleReminders,
     cancelReminder,
     deleteReminder,
     clearAllReminders,
     getActiveReminders,
     getExpiredReminders,
+    getAIGeneratedReminders,
+    getManualReminders,
+    getRemindersByCategory,
     refreshReminders,
     setError,
   };

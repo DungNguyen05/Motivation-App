@@ -15,21 +15,26 @@ import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 
 import { AddReminderForm } from './src/components/AddReminderForm';
 import { ReminderItem } from './src/components/ReminderItem';
+import { AIGoalForm } from './src/components/AIGoalForm';
+import { SettingsModal } from './src/components/SettingsModal';
 import { useReminders } from './src/hooks/useReminders';
 import { NotificationService } from './src/services/NotificationService';
 import { ReminderService } from './src/services/ReminderService';
+import { SettingsService } from './src/services/SettingsService';
 import { Reminder } from './src/types';
 
 export default function App() {
-  const [showAddForm, setShowAddForm] = useState(false);
+  const [currentView, setCurrentView] = useState<'list' | 'add' | 'ai' | 'settings'>('list');
   const [notificationPermission, setNotificationPermission] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
+  const [apiKey, setApiKey] = useState<string>('');
   
   const {
     reminders,
     loading,
     error,
     addReminder,
+    addMultipleReminders,
     cancelReminder,
     deleteReminder,
     clearAllReminders,
@@ -40,6 +45,10 @@ export default function App() {
   useEffect(() => {
     initializeApp();
     setupNotificationListeners();
+  }, []);
+
+  useEffect(() => {
+    loadSettings();
   }, []);
 
   // Sync notifications when app becomes active
@@ -53,9 +62,18 @@ export default function App() {
       }
     };
 
-    // Sync when component mounts
     syncOnFocus();
   }, []);
+
+  const loadSettings = async () => {
+    try {
+      const settingsService = SettingsService.getInstance();
+      const settings = await settingsService.getSettings();
+      setApiKey(settings.huggingFaceApiKey || '');
+    } catch (error) {
+      console.error('Error loading settings:', error);
+    }
+  };
 
   const initializeApp = async () => {
     try {
@@ -73,7 +91,6 @@ export default function App() {
             { 
               text: 'Settings', 
               onPress: () => {
-                // You might want to add a link to settings here
                 console.log('Navigate to settings');
               }
             }
@@ -89,7 +106,6 @@ export default function App() {
   };
 
   const setupNotificationListeners = () => {
-    // Listen for notification responses (when user taps notification)
     const notificationListener = Notifications.addNotificationReceivedListener(
       notification => {
         console.log('Notification received:', notification);
@@ -99,8 +115,6 @@ export default function App() {
     const responseListener = Notifications.addNotificationResponseReceivedListener(
       response => {
         console.log('Notification response:', response);
-        // Handle notification tap if needed
-        // You could navigate to specific reminder or mark as completed
       }
     );
 
@@ -114,12 +128,25 @@ export default function App() {
     try {
       const success = await addReminder(message, dateTime);
       if (success) {
-        setShowAddForm(false);
+        setCurrentView('list');
         return true;
       }
       return false;
     } catch (error) {
-      // Error is already handled in useReminders hook
+      return false;
+    }
+  };
+
+  const handleAIGoalSubmit = async (remindersToAdd: Reminder[]): Promise<boolean> => {
+    try {
+      const success = await addMultipleReminders(remindersToAdd);
+      if (success) {
+        setCurrentView('list');
+        Alert.alert('Success', `Created ${remindersToAdd.length} AI-generated reminders!`);
+        return true;
+      }
+      return false;
+    } catch (error) {
       return false;
     }
   };
@@ -149,6 +176,11 @@ export default function App() {
     );
   };
 
+  const handleSettingsSave = async (newApiKey: string) => {
+    setApiKey(newApiKey);
+    setCurrentView('list');
+  };
+
   const renderReminderItem = ({ item }: { item: Reminder }) => (
     <ReminderItem
       reminder={item}
@@ -159,21 +191,36 @@ export default function App() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>📝</Text>
+      <Text style={styles.emptyStateIcon}>🤖</Text>
       <Text style={styles.emptyStateTitle}>No Reminders</Text>
       <Text style={styles.emptyStateText}>
-        Tap the "Add Reminder" button to create your first reminder
+        Use AI to create smart reminders from your goals, or add them manually
       </Text>
     </View>
   );
 
   const renderHeader = () => (
     <View style={styles.header}>
-      <Text style={styles.title}>My Reminders</Text>
+      <View style={styles.headerTop}>
+        <Text style={styles.title}>AI Reminders</Text>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => setCurrentView('settings')}
+        >
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
       {!notificationPermission && (
         <View style={styles.permissionWarning}>
           <Text style={styles.permissionWarningText}>
             ⚠️ Notifications disabled - reminders won't work properly
+          </Text>
+        </View>
+      )}
+      {!apiKey && (
+        <View style={styles.apiWarning}>
+          <Text style={styles.apiWarningText}>
+            🤖 Set up Hugging Face API key in settings to use AI features
           </Text>
         </View>
       )}
@@ -190,20 +237,20 @@ export default function App() {
       <SafeAreaView style={styles.container}>
         <ExpoStatusBar style="dark" />
         <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>Initializing app...</Text>
+          <Text style={styles.loadingText}>Initializing AI Reminders...</Text>
         </View>
       </SafeAreaView>
     );
   }
 
-  if (showAddForm) {
+  if (currentView === 'add') {
     return (
       <SafeAreaView style={styles.container}>
         <ExpoStatusBar style="dark" />
         <View style={styles.formHeader}>
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setShowAddForm(false)}
+            onPress={() => setCurrentView('list')}
           >
             <Text style={styles.backButtonText}>← Back</Text>
           </TouchableOpacity>
@@ -213,13 +260,44 @@ export default function App() {
     );
   }
 
+  if (currentView === 'ai') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ExpoStatusBar style="dark" />
+        <View style={styles.formHeader}>
+          <TouchableOpacity
+            style={styles.backButton}
+            onPress={() => setCurrentView('list')}
+          >
+            <Text style={styles.backButtonText}>← Back</Text>
+          </TouchableOpacity>
+        </View>
+        <AIGoalForm 
+          onSubmit={handleAIGoalSubmit}
+          apiKey={apiKey}
+        />
+      </SafeAreaView>
+    );
+  }
+
+  if (currentView === 'settings') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <ExpoStatusBar style="dark" />
+        <SettingsModal
+          visible={true}
+          onClose={() => setCurrentView('list')}
+          onSave={handleSettingsSave}
+          initialApiKey={apiKey}
+        />
+      </SafeAreaView>
+    );
+  }
+
   // Sort reminders: active first, then by date
   const sortedReminders = [...reminders].sort((a, b) => {
-    // First sort by active status
     if (a.isActive && !b.isActive) return -1;
     if (!a.isActive && b.isActive) return 1;
-    
-    // Then sort by date
     return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
   });
 
@@ -258,10 +336,20 @@ export default function App() {
 
       <View style={styles.bottomActions}>
         <TouchableOpacity
-          style={[styles.actionButton, styles.addButton]}
-          onPress={() => setShowAddForm(true)}
+          style={[styles.actionButton, styles.aiButton]}
+          onPress={() => setCurrentView('ai')}
+          disabled={!apiKey}
         >
-          <Text style={styles.addButtonText}>+ Add Reminder</Text>
+          <Text style={[styles.aiButtonText, !apiKey && styles.disabledText]}>
+            🤖 AI Goal
+          </Text>
+        </TouchableOpacity>
+        
+        <TouchableOpacity
+          style={[styles.actionButton, styles.addButton]}
+          onPress={() => setCurrentView('add')}
+        >
+          <Text style={styles.addButtonText}>+ Manual</Text>
         </TouchableOpacity>
         
         {reminders.length > 0 && (
@@ -298,12 +386,22 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: '#e0e0e0',
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
   title: {
     fontSize: 28,
     fontWeight: 'bold',
     color: '#333',
-    textAlign: 'center',
-    marginBottom: 8,
+  },
+  settingsButton: {
+    padding: 8,
+  },
+  settingsButtonText: {
+    fontSize: 20,
   },
   permissionWarning: {
     backgroundColor: '#fff3cd',
@@ -315,6 +413,20 @@ const styles = StyleSheet.create({
   },
   permissionWarningText: {
     color: '#856404',
+    fontSize: 12,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  apiWarning: {
+    backgroundColor: '#e3f2fd',
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#2196f3',
+  },
+  apiWarningText: {
+    color: '#1976d2',
     fontSize: 12,
     textAlign: 'center',
     fontWeight: '500',
@@ -408,13 +520,16 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-    gap: 12,
+    gap: 8,
   },
   actionButton: {
     flex: 1,
     paddingVertical: 16,
     borderRadius: 8,
     alignItems: 'center',
+  },
+  aiButton: {
+    backgroundColor: '#4CAF50',
   },
   addButton: {
     backgroundColor: '#007AFF',
@@ -424,14 +539,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#dc3545',
   },
+  aiButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
   addButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
   },
   clearButtonText: {
     color: '#dc3545',
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '600',
+  },
+  disabledText: {
+    color: '#ccc',
   },
 });
