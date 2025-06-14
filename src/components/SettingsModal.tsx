@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,12 +6,11 @@ import {
   TouchableOpacity,
   StyleSheet,
   Alert,
-  ScrollView,
   ActivityIndicator,
-  Switch,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import { AIService } from '../services/AIService';
-import { SettingsService } from '../services/SettingsService';
 
 interface SettingsModalProps {
   visible: boolean;
@@ -29,29 +28,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   const [apiKey, setApiKey] = useState(initialApiKey);
   const [isTestingConnection, setIsTestingConnection] = useState(false);
   const [connectionTestResult, setConnectionTestResult] = useState<'success' | 'error' | null>(null);
-  const [notificationSettings, setNotificationSettings] = useState({
-    enabled: true,
-    sound: true,
-    vibrate: true,
-  });
-  const [aiPreferences, setAiPreferences] = useState({
-    reminderStyle: 'motivational' as 'motivational' | 'direct' | 'friendly',
-    reminderFrequency: 'moderate' as 'minimal' | 'moderate' | 'frequent',
-  });
 
-  useEffect(() => {
-    loadSettings();
-  }, []);
-
-  const loadSettings = async () => {
-    try {
-      const settingsService = SettingsService.getInstance();
-      const settings = await settingsService.getSettings();
-      setNotificationSettings(settings.notificationSettings);
-      setAiPreferences(settings.aiPreferences);
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
+  const dismissKeyboard = () => {
+    Keyboard.dismiss();
   };
 
   const handleTestConnection = async () => {
@@ -59,6 +38,9 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       Alert.alert('Error', 'Please enter an API key first');
       return;
     }
+
+    // Dismiss keyboard first
+    dismissKeyboard();
 
     setIsTestingConnection(true);
     setConnectionTestResult(null);
@@ -69,7 +51,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
       
       if (isValid) {
         setConnectionTestResult('success');
-        Alert.alert('Success', 'API key is valid and connection successful!');
+        Alert.alert('Success', 'Google Gemini API key is valid!');
       } else {
         setConnectionTestResult('error');
         Alert.alert('Error', 'Failed to connect. Please check your API key.');
@@ -83,50 +65,15 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
     }
   };
 
-  const handleSave = async () => {
-    try {
-      const settingsService = SettingsService.getInstance();
-      
-      // Save all settings
-      await settingsService.saveSettings({
-        huggingFaceApiKey: apiKey.trim(),
-        notificationSettings,
-        aiPreferences,
-      });
-
-      onSave(apiKey.trim());
-      Alert.alert('Success', 'Settings saved successfully!');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      Alert.alert('Error', 'Failed to save settings');
-    }
+  const handleSave = () => {
+    dismissKeyboard();
+    onSave(apiKey.trim());
+    Alert.alert('Success', 'API key saved successfully!');
   };
 
-  const handleClearSettings = () => {
-    Alert.alert(
-      'Clear All Settings',
-      'This will reset all settings to default values. Are you sure?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Clear',
-          style: 'destructive',
-          onPress: async () => {
-            try {
-              const settingsService = SettingsService.getInstance();
-              await settingsService.clearSettings();
-              setApiKey('');
-              setNotificationSettings({ enabled: true, sound: true, vibrate: true });
-              setAiPreferences({ reminderStyle: 'motivational', reminderFrequency: 'moderate' });
-              setConnectionTestResult(null);
-              Alert.alert('Success', 'Settings cleared successfully!');
-            } catch (error) {
-              Alert.alert('Error', 'Failed to clear settings');
-            }
-          },
-        },
-      ]
-    );
+  const handleClose = () => {
+    dismissKeyboard();
+    onClose();
   };
 
   const getConnectionStatusColor = () => {
@@ -144,174 +91,92 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   if (!visible) return null;
 
   return (
-    <View style={styles.overlay}>
-      <View style={styles.modal}>
-        <ScrollView style={styles.scrollView}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Settings</Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* API Key Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🤖 Hugging Face API</Text>
-            <Text style={styles.description}>
-              Get your free API key from{' '}
-              <Text style={styles.link}>huggingface.co/settings/tokens</Text>
-            </Text>
-            
-            <TextInput
-              style={styles.textInput}
-              placeholder="hf_xxxxxxxxxxxxxxxxxxxxxxxxxx"
-              value={apiKey}
-              onChangeText={setApiKey}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-
-            <View style={styles.connectionStatus}>
-              <Text style={[styles.statusText, { color: getConnectionStatusColor() }]}>
-                Status: {getConnectionStatusText()}
-              </Text>
+    <TouchableWithoutFeedback onPress={dismissKeyboard}>
+      <View style={styles.overlay}>
+        <TouchableWithoutFeedback onPress={() => {}}>
+          <View style={styles.modal}>
+            <View style={styles.header}>
+              <Text style={styles.title}>Google Gemini Settings</Text>
+              <TouchableOpacity style={styles.closeButton} onPress={handleClose}>
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
             </View>
 
-            <TouchableOpacity
-              style={[styles.testButton, isTestingConnection && styles.testButtonDisabled]}
-              onPress={handleTestConnection}
-              disabled={isTestingConnection}
-            >
-              {isTestingConnection ? (
-                <ActivityIndicator color="#fff" size="small" />
-              ) : (
-                <Text style={styles.testButtonText}>Test Connection</Text>
-              )}
-            </TouchableOpacity>
-          </View>
+            <TouchableWithoutFeedback onPress={dismissKeyboard}>
+              <View style={styles.content}>
+                <Text style={styles.sectionTitle}>🤖 Google Gemini API Key (FREE)</Text>
+                <Text style={styles.description}>
+                  Get your FREE API key from aistudio.google.com/app/apikey
+                </Text>
+                
+                <TextInput
+                  style={styles.textInput}
+                  placeholder="AIzaSyxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+                  value={apiKey}
+                  onChangeText={setApiKey}
+                  secureTextEntry
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  returnKeyType="done"
+                  onSubmitEditing={dismissKeyboard}
+                  blurOnSubmit={true}
+                />
 
-          {/* Notification Settings */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🔔 Notifications</Text>
-            
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Enable Notifications</Text>
-              <Switch
-                value={notificationSettings.enabled}
-                onValueChange={(value) =>
-                  setNotificationSettings(prev => ({ ...prev, enabled: value }))
-                }
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Sound</Text>
-              <Switch
-                value={notificationSettings.sound}
-                onValueChange={(value) =>
-                  setNotificationSettings(prev => ({ ...prev, sound: value }))
-                }
-                disabled={!notificationSettings.enabled}
-              />
-            </View>
-
-            <View style={styles.settingRow}>
-              <Text style={styles.settingLabel}>Vibration</Text>
-              <Switch
-                value={notificationSettings.vibrate}
-                onValueChange={(value) =>
-                  setNotificationSettings(prev => ({ ...prev, vibrate: value }))
-                }
-                disabled={!notificationSettings.enabled}
-              />
-            </View>
-          </View>
-
-          {/* AI Preferences */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>🎯 AI Preferences</Text>
-            
-            <Text style={styles.subSectionTitle}>Reminder Style</Text>
-            <View style={styles.optionGroup}>
-              {['motivational', 'direct', 'friendly'].map((style) => (
-                <TouchableOpacity
-                  key={style}
-                  style={[
-                    styles.optionButton,
-                    aiPreferences.reminderStyle === style && styles.optionButtonSelected
-                  ]}
-                  onPress={() => setAiPreferences(prev => ({ 
-                    ...prev, 
-                    reminderStyle: style as any 
-                  }))}
-                >
-                  <Text style={[
-                    styles.optionText,
-                    aiPreferences.reminderStyle === style && styles.optionTextSelected
-                  ]}>
-                    {style.charAt(0).toUpperCase() + style.slice(1)}
+                <View style={styles.connectionStatus}>
+                  <Text style={[styles.statusText, { color: getConnectionStatusColor() }]}>
+                    Status: {getConnectionStatusText()}
                   </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+                </View>
 
-            <Text style={styles.subSectionTitle}>Reminder Frequency</Text>
-            <View style={styles.optionGroup}>
-              {['minimal', 'moderate', 'frequent'].map((frequency) => (
                 <TouchableOpacity
-                  key={frequency}
-                  style={[
-                    styles.optionButton,
-                    aiPreferences.reminderFrequency === frequency && styles.optionButtonSelected
-                  ]}
-                  onPress={() => setAiPreferences(prev => ({ 
-                    ...prev, 
-                    reminderFrequency: frequency as any 
-                  }))}
+                  style={[styles.testButton, isTestingConnection && styles.testButtonDisabled]}
+                  onPress={handleTestConnection}
+                  disabled={isTestingConnection}
                 >
-                  <Text style={[
-                    styles.optionText,
-                    aiPreferences.reminderFrequency === frequency && styles.optionTextSelected
-                  ]}>
-                    {frequency.charAt(0).toUpperCase() + frequency.slice(1)}
-                  </Text>
+                  {isTestingConnection ? (
+                    <ActivityIndicator color="#fff" size="small" />
+                  ) : (
+                    <Text style={styles.testButtonText}>Test Connection</Text>
+                  )}
                 </TouchableOpacity>
-              ))}
+
+                <View style={styles.freeInfo}>
+                  <Text style={styles.freeTitle}>🎉 FREE TIER LIMITS</Text>
+                  <Text style={styles.freeText}>
+                    • 15 requests per minute{'\n'}
+                    • 1,500 requests per day{'\n'}
+                    • Perfect for multiple users!{'\n'}
+                    • No credit card required
+                  </Text>
+                </View>
+
+                <View style={styles.instructions}>
+                  <Text style={styles.instructionTitle}>📖 How to Get FREE API Key</Text>
+                  <Text style={styles.instructionText}>
+                    1. Visit aistudio.google.com{'\n'}
+                    2. Sign in with Google account{'\n'}
+                    3. Click "Get API key"{'\n'}
+                    4. Click "Create API key"{'\n'}
+                    5. Copy the key (starts with "AIza"){'\n'}
+                    6. Paste it above and test
+                  </Text>
+                </View>
+              </View>
+            </TouchableWithoutFeedback>
+
+            <View style={styles.footer}>
+              <TouchableOpacity style={styles.cancelButton} onPress={handleClose}>
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
+                <Text style={styles.saveButtonText}>Save</Text>
+              </TouchableOpacity>
             </View>
           </View>
-
-          {/* Instructions Section */}
-          <View style={styles.section}>
-            <Text style={styles.sectionTitle}>📖 How to Get API Key</Text>
-            <Text style={styles.instructionText}>
-              1. Visit huggingface.co and create a free account{'\n'}
-              2. Go to Settings → Access Tokens{'\n'}
-              3. Click "New token" and select "Read" permission{'\n'}
-              4. Copy the token (starts with "hf_"){'\n'}
-              5. Paste it above and test the connection
-            </Text>
-          </View>
-        </ScrollView>
-
-        {/* Action Buttons */}
-        <View style={styles.footer}>
-          <TouchableOpacity style={styles.clearButton} onPress={handleClearSettings}>
-            <Text style={styles.clearButtonText}>Clear All</Text>
-          </TouchableOpacity>
-          
-          <View style={styles.actionButtons}>
-            <TouchableOpacity style={styles.cancelButton} onPress={onClose}>
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-            
-            <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-              <Text style={styles.saveButtonText}>Save</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        </TouchableWithoutFeedback>
       </View>
-    </View>
+    </TouchableWithoutFeedback>
   );
 };
 
@@ -333,9 +198,6 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 8,
   },
-  scrollView: {
-    maxHeight: '85%',
-  },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -356,10 +218,9 @@ const styles = StyleSheet.create({
     fontSize: 18,
     color: '#666',
   },
-  section: {
+  content: {
     padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    maxHeight: 500,
   },
   sectionTitle: {
     fontSize: 16,
@@ -367,22 +228,11 @@ const styles = StyleSheet.create({
     color: '#333',
     marginBottom: 12,
   },
-  subSectionTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#555',
-    marginTop: 16,
-    marginBottom: 8,
-  },
   description: {
     fontSize: 14,
     color: '#666',
     marginBottom: 12,
     lineHeight: 20,
-  },
-  link: {
-    color: '#007AFF',
-    fontWeight: '500',
   },
   textInput: {
     borderWidth: 1,
@@ -401,7 +251,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   testButton: {
-    backgroundColor: '#007AFF',
+    backgroundColor: '#4285f4',
     borderRadius: 6,
     padding: 10,
     alignItems: 'center',
@@ -415,41 +265,38 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  settingRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-  },
-  settingLabel: {
-    fontSize: 14,
-    color: '#333',
-  },
-  optionGroup: {
-    flexDirection: 'row',
-    gap: 8,
-    marginBottom: 16,
-  },
-  optionButton: {
-    flex: 1,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 6,
-    padding: 10,
-    alignItems: 'center',
+  freeInfo: {
+    marginTop: 20,
+    padding: 16,
+    backgroundColor: '#e8f5e8',
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#4CAF50',
   },
-  optionButtonSelected: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
+  freeTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#2e7d2e',
+    marginBottom: 8,
   },
-  optionText: {
+  freeText: {
     fontSize: 12,
-    color: '#333',
-    fontWeight: '500',
+    color: '#2e7d2e',
+    lineHeight: 18,
   },
-  optionTextSelected: {
-    color: '#fff',
+  instructions: {
+    marginTop: 16,
+    padding: 16,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#e9ecef',
+  },
+  instructionTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
   },
   instructionText: {
     fontSize: 12,
@@ -457,28 +304,11 @@ const styles = StyleSheet.create({
     lineHeight: 18,
   },
   footer: {
+    flexDirection: 'row',
+    gap: 12,
     padding: 20,
     borderTopWidth: 1,
     borderTopColor: '#e0e0e0',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    gap: 12,
-    marginTop: 12,
-  },
-  clearButton: {
-    backgroundColor: '#f8f9fa',
-    borderRadius: 6,
-    padding: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#dc3545',
-    marginBottom: 8,
-  },
-  clearButtonText: {
-    color: '#dc3545',
-    fontSize: 12,
-    fontWeight: '500',
   },
   cancelButton: {
     flex: 1,

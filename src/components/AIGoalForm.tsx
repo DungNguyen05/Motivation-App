@@ -34,22 +34,12 @@ export const AIGoalForm: React.FC<AIGoalFormProps> = ({
   const [previewReminders, setPreviewReminders] = useState<PreviewReminder[]>([]);
   const [showPreview, setShowPreview] = useState(false);
 
-  const quickGoals = [
-    'Learn a new language',
-    'Exercise regularly',
-    'Read more books',
-    'Drink more water',
-    'Improve sleep schedule',
-    'Learn programming',
-  ];
-
   const timeframeOptions = [
     { label: '1 Week', value: '1 week' },
     { label: '2 Weeks', value: '2 weeks' },
     { label: '1 Month', value: '1 month' },
     { label: '3 Months', value: '3 months' },
     { label: '6 Months', value: '6 months' },
-    { label: '1 Year', value: '1 year' },
   ];
 
   const handleAnalyzeGoal = async () => {
@@ -64,7 +54,7 @@ export const AIGoalForm: React.FC<AIGoalFormProps> = ({
     }
 
     if (!apiKey) {
-      Alert.alert('Error', 'Please set up Hugging Face API key in settings');
+      Alert.alert('Error', 'Please set up OpenAI API key in settings');
       return;
     }
 
@@ -77,13 +67,13 @@ export const AIGoalForm: React.FC<AIGoalFormProps> = ({
         setPreviewReminders(analysis.reminders);
         setShowPreview(true);
       } else {
-        Alert.alert('No Results', 'AI could not generate reminders for this goal. Please try rephrasing your goal or check your API key.');
+        Alert.alert('No Results', 'AI could not generate reminders. Please try rephrasing your goal.');
       }
     } catch (error) {
       console.error('Error analyzing goal:', error);
       Alert.alert(
         'Analysis Failed', 
-        error instanceof Error ? error.message : 'Failed to analyze goal. Please check your API key and try again.'
+        error instanceof Error ? error.message : 'Failed to analyze goal. Please check your API key.'
       );
     } finally {
       setIsAnalyzing(false);
@@ -137,59 +127,55 @@ export const AIGoalForm: React.FC<AIGoalFormProps> = ({
     });
   };
 
-  const renderPreview = () => (
-    <View style={styles.previewContainer}>
-      <Text style={styles.previewTitle}>AI Generated Reminders ({previewReminders.length})</Text>
-      <Text style={styles.previewSubtitle}>Review and edit before creating</Text>
-      
-      <ScrollView style={styles.previewList}>
-        {previewReminders.map((reminder, index) => (
-          <View key={index} style={styles.previewItem}>
-            <View style={styles.previewItemHeader}>
-              <Text style={styles.previewCategory}>{reminder.category}</Text>
-              <TouchableOpacity
-                style={styles.removeButton}
-                onPress={() => handleRemoveReminder(index)}
-              >
-                <Text style={styles.removeButtonText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-            <TextInput
-              style={styles.previewMessage}
-              value={reminder.message}
-              onChangeText={(text) => handleEditReminder(index, text)}
-              multiline
-            />
-            <Text style={styles.previewTime}>{formatDateTime(reminder.dateTime)}</Text>
-          </View>
-        ))}
-      </ScrollView>
-
-      <View style={styles.previewActions}>
-        <TouchableOpacity
-          style={styles.backToEditButton}
-          onPress={() => setShowPreview(false)}
-        >
-          <Text style={styles.backToEditButtonText}>← Edit Goal</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity
-          style={styles.createRemindersButton}
-          onPress={handleCreateReminders}
-          disabled={previewReminders.length === 0}
-        >
-          <Text style={styles.createRemindersButtonText}>
-            Create {previewReminders.length} Reminders
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-
   if (showPreview) {
     return (
       <ScrollView style={styles.container}>
-        {renderPreview()}
+        <View style={styles.previewContainer}>
+          <Text style={styles.previewTitle}>AI Generated Reminders ({previewReminders.length})</Text>
+          <Text style={styles.previewSubtitle}>Review and edit before creating</Text>
+          
+          <ScrollView style={styles.previewList}>
+            {previewReminders.map((reminder, index) => (
+              <View key={index} style={styles.previewItem}>
+                <View style={styles.previewItemHeader}>
+                  <Text style={styles.previewCategory}>{reminder.category}</Text>
+                  <TouchableOpacity
+                    style={styles.removeButton}
+                    onPress={() => handleRemoveReminder(index)}
+                  >
+                    <Text style={styles.removeButtonText}>✕</Text>
+                  </TouchableOpacity>
+                </View>
+                <TextInput
+                  style={styles.previewMessage}
+                  value={reminder.message}
+                  onChangeText={(text) => handleEditReminder(index, text)}
+                  multiline
+                />
+                <Text style={styles.previewTime}>{formatDateTime(reminder.dateTime)}</Text>
+              </View>
+            ))}
+          </ScrollView>
+
+          <View style={styles.previewActions}>
+            <TouchableOpacity
+              style={styles.backToEditButton}
+              onPress={() => setShowPreview(false)}
+            >
+              <Text style={styles.backToEditButtonText}>← Edit Goal</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity
+              style={styles.createRemindersButton}
+              onPress={handleCreateReminders}
+              disabled={previewReminders.length === 0}
+            >
+              <Text style={styles.createRemindersButtonText}>
+                Create {previewReminders.length} Reminders
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
       </ScrollView>
     );
   }
@@ -204,30 +190,13 @@ export const AIGoalForm: React.FC<AIGoalFormProps> = ({
           <Text style={styles.label}>What's your goal?</Text>
           <TextInput
             style={styles.goalInput}
-            placeholder="E.g., Learn Spanish, Exercise regularly, Read 12 books this year..."
+            placeholder="E.g., Learn Spanish, Exercise regularly, Read 12 books..."
             value={goal}
             onChangeText={setGoal}
             multiline
-            maxLength={500}
+            maxLength={200}
             editable={!isAnalyzing}
           />
-          <Text style={styles.characterCount}>{goal.length}/500</Text>
-        </View>
-
-        <View style={styles.quickGoalsContainer}>
-          <Text style={styles.label}>Quick Goal Ideas:</Text>
-          <View style={styles.quickGoalsGrid}>
-            {quickGoals.map((quickGoal) => (
-              <TouchableOpacity
-                key={quickGoal}
-                style={styles.quickGoalButton}
-                onPress={() => setGoal(quickGoal)}
-                disabled={isAnalyzing}
-              >
-                <Text style={styles.quickGoalText}>{quickGoal}</Text>
-              </TouchableOpacity>
-            ))}
-          </View>
         </View>
 
         <View style={styles.timeframeContainer}>
@@ -274,20 +243,10 @@ export const AIGoalForm: React.FC<AIGoalFormProps> = ({
         {!apiKey && (
           <View style={styles.apiKeyWarning}>
             <Text style={styles.apiKeyWarningText}>
-              ⚠️ Please set up your Hugging Face API key in settings to use AI features
+              ⚠️ Please set up your OpenAI API key in settings to use AI features
             </Text>
           </View>
         )}
-
-        <View style={styles.infoContainer}>
-          <Text style={styles.infoTitle}>How it works:</Text>
-          <Text style={styles.infoText}>
-            • AI analyzes your goal and timeframe{'\n'}
-            • Creates a structured reminder plan{'\n'}
-            • Sets appropriate intervals and milestones{'\n'}
-            • You can review and edit before creating
-          </Text>
-        </View>
       </View>
     </ScrollView>
   );
@@ -337,36 +296,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     fontSize: 16,
-    minHeight: 100,
+    minHeight: 80,
     textAlignVertical: 'top',
     backgroundColor: '#f9f9f9',
-  },
-  characterCount: {
-    fontSize: 12,
-    color: '#666',
-    textAlign: 'right',
-    marginTop: 4,
-  },
-  quickGoalsContainer: {
-    marginBottom: 24,
-  },
-  quickGoalsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  quickGoalButton: {
-    backgroundColor: '#e3f2fd',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: '#2196f3',
-  },
-  quickGoalText: {
-    color: '#1976d2',
-    fontSize: 12,
-    fontWeight: '500',
   },
   timeframeContainer: {
     marginBottom: 24,
@@ -383,6 +315,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     borderWidth: 1,
     borderColor: '#ddd',
+    minWidth: '30%',
+    alignItems: 'center',
   },
   timeframeButtonSelected: {
     backgroundColor: '#4CAF50',
@@ -424,7 +358,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff3cd',
     padding: 12,
     borderRadius: 8,
-    marginBottom: 16,
     borderWidth: 1,
     borderColor: '#ffc107',
   },
@@ -432,24 +365,6 @@ const styles = StyleSheet.create({
     color: '#856404',
     fontSize: 12,
     textAlign: 'center',
-  },
-  infoContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#e9ecef',
-  },
-  infoTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  infoText: {
-    fontSize: 12,
-    color: '#666',
-    lineHeight: 18,
   },
   previewContainer: {
     backgroundColor: '#fff',

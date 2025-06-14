@@ -1,16 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export interface AppSettings {
-  huggingFaceApiKey: string;
-  notificationSettings: {
-    enabled: boolean;
-    sound: boolean;
-    vibrate: boolean;
-  };
-  aiPreferences: {
-    reminderStyle: 'motivational' | 'direct' | 'friendly';
-    reminderFrequency: 'minimal' | 'moderate' | 'frequent';
-  };
+  geminiApiKey: string;
 }
 
 export class SettingsService {
@@ -28,16 +19,7 @@ export class SettingsService {
 
   private getDefaultSettings(): AppSettings {
     return {
-      huggingFaceApiKey: '',
-      notificationSettings: {
-        enabled: true,
-        sound: true,
-        vibrate: true,
-      },
-      aiPreferences: {
-        reminderStyle: 'motivational',
-        reminderFrequency: 'moderate',
-      },
+      geminiApiKey: '',
     };
   }
 
@@ -49,7 +31,6 @@ export class SettingsService {
       }
       
       const settings = JSON.parse(jsonValue);
-      // Merge with defaults to ensure all properties exist
       return { ...this.getDefaultSettings(), ...settings };
     } catch (error) {
       console.error('Error loading settings:', error);
@@ -71,32 +52,12 @@ export class SettingsService {
   }
 
   async updateApiKey(apiKey: string): Promise<void> {
-    await this.saveSettings({ huggingFaceApiKey: apiKey });
+    await this.saveSettings({ geminiApiKey: apiKey });
   }
 
   async getApiKey(): Promise<string> {
     const settings = await this.getSettings();
-    return settings.huggingFaceApiKey;
-  }
-
-  async updateNotificationSettings(notificationSettings: Partial<AppSettings['notificationSettings']>): Promise<void> {
-    const currentSettings = await this.getSettings();
-    await this.saveSettings({
-      notificationSettings: {
-        ...currentSettings.notificationSettings,
-        ...notificationSettings,
-      },
-    });
-  }
-
-  async updateAIPreferences(aiPreferences: Partial<AppSettings['aiPreferences']>): Promise<void> {
-    const currentSettings = await this.getSettings();
-    await this.saveSettings({
-      aiPreferences: {
-        ...currentSettings.aiPreferences,
-        ...aiPreferences,
-      },
-    });
+    return settings.geminiApiKey;
   }
 
   async clearSettings(): Promise<void> {
