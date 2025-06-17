@@ -8,10 +8,8 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
-  ImageBackground,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
-import { LinearGradient } from 'expo-linear-gradient';
 
 import { GoalForm } from './src/components/GoalForm';
 import { MotivationItem } from './src/components/MotivationItem';
@@ -44,8 +42,8 @@ export default function App() {
       
       if (!hasPermission) {
         Alert.alert(
-          'Thông báo cần thiết',
-          'Ứng dụng cần quyền thông báo để gửi lời nhắc động lực cho bạn.',
+          'Cần quyền thông báo',
+          'Ứng dụng cần quyền thông báo để gửi lời nhắc động lực.',
           [{ text: 'OK' }]
         );
       }
@@ -55,7 +53,7 @@ export default function App() {
     }
   };
 
-  const handleGoalSubmit = async (goal: string, timeframe: string): Promise<boolean> => {
+  const handleGoalSubmit = async (goal: string, timeframe?: string): Promise<boolean> => {
     try {
       const success = await addGoal(goal, timeframe);
       if (success) {
@@ -95,26 +93,22 @@ export default function App() {
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>🎯</Text>
       <Text style={styles.emptyStateTitle}>Chưa có mục tiêu nào</Text>
       <Text style={styles.emptyStateText}>
-        Hãy đặt mục tiêu đầu tiên và để AI tạo ra những lời nhắc động lực cho bạn!
+        Hãy đặt mục tiêu đầu tiên và để AI tạo ra những lời nhắc động lực cho bạn
       </Text>
       <TouchableOpacity
         style={styles.startButton}
         onPress={() => setCurrentView('goal')}
       >
-        <Text style={styles.startButtonText}>🚀 Bắt đầu ngay</Text>
+        <Text style={styles.startButtonText}>Bắt đầu ngay</Text>
       </TouchableOpacity>
     </View>
   );
 
   const renderHeader = () => (
-    <LinearGradient
-      colors={['#667eea', '#764ba2']}
-      style={styles.header}
-    >
-      <Text style={styles.title}>💪 Motivation</Text>
+    <View style={styles.header}>
+      <Text style={styles.title}>Motivation</Text>
       <Text style={styles.subtitle}>Hành trình đạt mục tiêu của bạn</Text>
       <View style={styles.stats}>
         <View style={styles.statItem}>
@@ -126,17 +120,14 @@ export default function App() {
           <Text style={styles.statLabel}>Tổng số</Text>
         </View>
       </View>
-    </LinearGradient>
+    </View>
   );
 
   if (currentView === 'goal') {
     return (
       <SafeAreaView style={styles.container}>
-        <ExpoStatusBar style="light" />
-        <LinearGradient
-          colors={['#667eea', '#764ba2'] as const}
-          style={styles.formHeader}
-        >
+        <ExpoStatusBar style="dark" />
+        <View style={styles.formHeader}>
           <TouchableOpacity
             style={styles.backButton}
             onPress={() => setCurrentView('home')}
@@ -144,7 +135,7 @@ export default function App() {
             <Text style={styles.backButtonText}>← Quay lại</Text>
           </TouchableOpacity>
           <Text style={styles.formTitle}>Đặt mục tiêu mới</Text>
-        </LinearGradient>
+        </View>
         <GoalForm onSubmit={handleGoalSubmit} />
       </SafeAreaView>
     );
@@ -159,13 +150,13 @@ export default function App() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ExpoStatusBar style="light" />
+      <ExpoStatusBar style="dark" />
       
       {renderHeader()}
       
       {error && (
         <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>⚠️ {error}</Text>
+          <Text style={styles.errorText}>{error}</Text>
           <TouchableOpacity 
             style={styles.retryButton} 
             onPress={refreshMotivations}
@@ -193,12 +184,7 @@ export default function App() {
           style={styles.newGoalButton}
           onPress={() => setCurrentView('goal')}
         >
-          <LinearGradient
-            colors={['#4facfe', '#00f2fe'] as const}
-            style={styles.gradientButton}
-          >
-            <Text style={styles.newGoalButtonText}>🎯 Mục tiêu mới</Text>
-          </LinearGradient>
+          <Text style={styles.newGoalButtonText}>Mục tiêu mới</Text>
         </TouchableOpacity>
         
         {motivations.length > 0 && (
@@ -217,26 +203,27 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#ffffff',
   },
   header: {
-    paddingHorizontal: 20,
-    paddingVertical: 30,
-    borderBottomLeftRadius: 30,
-    borderBottomRightRadius: 30,
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 24,
+    paddingVertical: 32,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
   title: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#ffffff',
     textAlign: 'center',
     marginBottom: 8,
   },
   subtitle: {
     fontSize: 16,
-    color: 'rgba(255,255,255,0.9)',
+    color: '#d1d5db',
     textAlign: 'center',
-    marginBottom: 20,
+    marginBottom: 24,
   },
   stats: {
     flexDirection: 'row',
@@ -246,37 +233,40 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   statNumber: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#ffffff',
   },
   statLabel: {
     fontSize: 12,
-    color: 'rgba(255,255,255,0.8)',
+    color: '#d1d5db',
+    marginTop: 2,
   },
   formHeader: {
-    paddingHorizontal: 20,
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 24,
     paddingVertical: 20,
     borderBottomLeftRadius: 20,
     borderBottomRightRadius: 20,
   },
   backButton: {
     alignSelf: 'flex-start',
-    marginBottom: 10,
+    marginBottom: 12,
   },
   backButtonText: {
     fontSize: 16,
-    color: '#fff',
+    color: '#ffffff',
     fontWeight: '500',
   },
   formTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: 22,
+    fontWeight: '700',
+    color: '#ffffff',
     textAlign: 'center',
   },
   list: {
     flex: 1,
+    backgroundColor: '#f9fafb',
   },
   listContent: {
     paddingBottom: 20,
@@ -290,98 +280,88 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingHorizontal: 40,
   },
-  emptyStateIcon: {
-    fontSize: 64,
-    marginBottom: 20,
-  },
   emptyStateTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#666',
+    fontSize: 20,
+    fontWeight: '600',
+    color: '#374151',
     marginBottom: 12,
     textAlign: 'center',
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#888',
+    color: '#6b7280',
     textAlign: 'center',
     lineHeight: 24,
-    marginBottom: 30,
+    marginBottom: 32,
   },
   startButton: {
-    backgroundColor: '#667eea',
-    paddingHorizontal: 30,
-    paddingVertical: 15,
-    borderRadius: 25,
+    backgroundColor: '#1f2937',
+    paddingHorizontal: 32,
+    paddingVertical: 16,
+    borderRadius: 12,
   },
   startButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
   errorContainer: {
-    backgroundColor: '#fee',
+    backgroundColor: '#fef2f2',
     padding: 12,
     marginHorizontal: 16,
     marginVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#fcc',
+    borderColor: '#fecaca',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   errorText: {
-    color: '#c33',
+    color: '#dc2626',
     fontSize: 14,
     flex: 1,
     marginRight: 12,
   },
   retryButton: {
-    backgroundColor: '#c33',
+    backgroundColor: '#dc2626',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
   },
   retryButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 12,
     fontWeight: '500',
   },
   bottomActions: {
     padding: 16,
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: -2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 5,
+    backgroundColor: '#ffffff',
+    borderTopWidth: 1,
+    borderTopColor: '#e5e7eb',
   },
   newGoalButton: {
-    marginBottom: 12,
-  },
-  gradientButton: {
+    backgroundColor: '#1f2937',
     paddingVertical: 16,
     borderRadius: 12,
     alignItems: 'center',
+    marginBottom: 12,
   },
   newGoalButtonText: {
-    color: '#fff',
+    color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
   },
   clearButton: {
     backgroundColor: 'transparent',
     borderWidth: 1,
-    borderColor: '#dc3545',
+    borderColor: '#ef4444',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
   clearButtonText: {
-    color: '#dc3545',
+    color: '#ef4444',
     fontSize: 14,
     fontWeight: '500',
   },

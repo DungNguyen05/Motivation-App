@@ -4,7 +4,6 @@ import { NotificationService } from './NotificationService';
 import { StorageService } from './StorageService';
 import { AIService } from './AIService';
 
-
 export class MotivationService {
   private static instance: MotivationService;
   private notificationService: NotificationService;
@@ -14,7 +13,7 @@ export class MotivationService {
   private constructor() {
     this.notificationService = NotificationService.getInstance();
     this.storageService = StorageService.getInstance();
-    this.aiService = new AIService(); // No API key needed, using fixed key
+    this.aiService = new AIService();
   }
 
   public static getInstance(): MotivationService {
@@ -24,27 +23,33 @@ export class MotivationService {
     return MotivationService.instance;
   }
 
-  async createMotivationPlan(goal: string, timeframe: string): Promise<Motivation[]> {
+  async createMotivationPlan(goal: string, timeframe?: string): Promise<Motivation[]> {
     try {
-      console.log('Creating motivation plan for:', { goal, timeframe });
+      console.log('Creating motivation plan for:', { goal, timeframe: timeframe || 'auto' });
       
-      // Get AI analysis
-      const analysis = await this.aiService.analyzeGoal(goal, timeframe);
+      // Validate inputs first
+      if (!goal || !goal.trim()) {
+        throw new Error('Vui lòng nhập mục tiêu của bạn.');
+      }
+
+      // Get AI analysis - this will throw an error if AI fails
+      const analysis = await this.aiService.analyzeGoal(goal.trim(), timeframe);
       
       if (!analysis.motivations || analysis.motivations.length === 0) {
-        throw new Error('AI không thể tạo kế hoạch động lực. Vui lòng thử lại.');
+        throw new Error('AI không thể tạo kế hoạch động lực. Vui lòng thử lại với mục tiêu cụ thể hơn.');
       }
 
       const createdMotivations: Motivation[] = [];
       const errors: string[] = [];
 
+      // Try to create each motivation
       for (const motivationData of analysis.motivations) {
         try {
           const motivation = await this.createMotivation(
             motivationData.message,
             motivationData.scheduledTime,
             motivationData.category,
-            goal
+            goal.trim()
           );
 
           if (motivation) {
@@ -52,24 +57,37 @@ export class MotivationService {
           }
         } catch (error) {
           const errorMsg = error instanceof Error ? error.message : 'Lỗi không xác định';
-          errors.push(`Không thể tạo lời nhắc "${motivationData.message}": ${errorMsg}`);
+          errors.push(`Không thể tạo lời nhắc "${motivationData.message.substring(0, 30)}...": ${errorMsg}`);
           console.error('Error creating individual motivation:', error);
         }
       }
 
-      if (errors.length > 0 && createdMotivations.length === 0) {
-        throw new Error(`Không thể tạo kế hoạch động lực: ${errors.join(', ')}`);
+      // If no motivations were created successfully
+      if (createdMotivations.length === 0) {
+        if (errors.length > 0) {
+          throw new Error(`Không thể tạo kế hoạch động lực:\n${errors.join('\n')}`);
+        } else {
+          throw new Error('Không thể tạo bất kỳ lời nhắc nào. Vui lòng kiểm tra quyền thông báo và thử lại.');
+        }
       }
 
+      // If some motivations failed but some succeeded
       if (errors.length > 0) {
         console.warn('Some motivations failed to create:', errors);
+        // Continue with successful ones but log the errors
       }
 
       console.log(`Successfully created ${createdMotivations.length} motivations for goal: ${goal}`);
       return createdMotivations;
     } catch (error) {
       console.error('Error creating motivation plan:', error);
-      throw error;
+      
+      // Re-throw the error with user-friendly message
+      if (error instanceof Error) {
+        throw error;
+      } else {
+        throw new Error('Có lỗi không xác định xảy ra. Vui lòng thử lại.');
+      }
     }
   }
 
@@ -93,13 +111,13 @@ export class MotivationService {
 
       // Schedule notification
       const notificationId = await this.notificationService.scheduleNotification(
-        '💪 Động lực',
+        'Động lực',
         message.trim(),
         scheduledTime
       );
 
       if (!notificationId) {
-        throw new Error('Không thể đặt lịch thông báo');
+        throw new Error('Không thể đặt lịch thông báo. Vui lòng kiểm tra quyền thông báo.');
       }
 
       // Create motivation object
@@ -130,7 +148,7 @@ export class MotivationService {
       return await this.storageService.loadMotivations();
     } catch (error) {
       console.error('Error loading motivations:', error);
-      return [];
+      throw new Error('Không thể tải dữ liệu. Vui lòng thử lại.');
     }
   }
 
@@ -182,7 +200,7 @@ export class MotivationService {
       console.log('Motivation deleted:', motivationId);
     } catch (error) {
       console.error('Error deleting motivation:', error);
-      throw error;
+      throw new Error('Không thể xóa lời nhắc. Vui lòng thử lại.');
     }
   }
 
@@ -199,7 +217,7 @@ export class MotivationService {
       console.log('All motivations cleared');
     } catch (error) {
       console.error('Error clearing all motivations:', error);
-      throw error;
+      throw new Error('Không thể xóa tất cả lời nhắc. Vui lòng thử lại.');
     }
   }
 
@@ -258,5 +276,15 @@ export class MotivationService {
 
   validateMotivationTime(scheduledTime: Date): boolean {
     return scheduledTime > new Date();
+  }
+
+  // Test AI connection
+  async testAIConnection(): Promise<boolean> {
+    try {
+      return await this.aiService.testConnection();
+    } catch (error) {
+      console.error('AI connection test failed:', error);
+      return false;
+    }
   }
 }

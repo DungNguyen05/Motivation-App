@@ -6,7 +6,6 @@ import {
   StyleSheet,
   Alert,
 } from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import { Motivation } from '../types';
 
 interface MotivationItemProps {
@@ -42,7 +41,7 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
       if (diffHours === 0) {
         return `Sau ${diffMinutes} phút`;
       }
-      return `Hôm nay lúc ${motivationDate.toLocaleTimeString('vi-VN', {
+      return `Hôm nay ${motivationDate.toLocaleTimeString('vi-VN', {
         hour: '2-digit',
         minute: '2-digit',
       })}`;
@@ -50,7 +49,7 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
     
     // If it's tomorrow
     if (diffDays === 1) {
-      return `Ngày mai lúc ${motivationDate.toLocaleTimeString('vi-VN', {
+      return `Ngày mai ${motivationDate.toLocaleTimeString('vi-VN', {
         hour: '2-digit',
         minute: '2-digit',
       })}`;
@@ -81,55 +80,33 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
     );
   };
 
-  const getStatusIcon = () => {
-    if (!motivation.isActive) return '⚪';
-    if (isExpired) return '🔴';
-    return '🟢';
-  };
-
   const getStatusText = () => {
     if (!motivation.isActive) return 'Đã hủy';
     if (isExpired) return 'Đã qua';
     return 'Đang hoạt động';
   };
 
-  const getCategoryIcon = (category: string) => {
+  const getCategoryColor = (category: string): string => {
     switch (category) {
-      case 'Start': return '🚀';
-      case 'Daily': return '📅';
-      case 'Weekly Review': return '📊';
-      case 'Completion': return '🏆';
-      case 'Motivation': return '💪';
-      default: return '⭐';
-    }
-  };
-
-  const getCategoryGradient = (category: string): readonly [string, string, ...string[]] => {
-    switch (category) {
-      case 'Start': return ['#ff9a9e', '#fecfef'] as const;
-      case 'Daily': return ['#a8edea', '#fed6e3'] as const;
-      case 'Weekly Review': return ['#fbc2eb', '#a6c1ee'] as const;
-      case 'Completion': return ['#ffecd2', '#fcb69f'] as const;
-      case 'Motivation': return ['#667eea', '#764ba2'] as const;
-      default: return ['#ffeaa7', '#fab1a0'] as const;
+      case 'Start': return '#f472b6';
+      case 'Daily': return '#60a5fa';
+      case 'Weekly Review': return '#34d399';
+      case 'Completion': return '#fbbf24';
+      case 'Motivation': return '#8b5cf6';
+      default: return '#9ca3af';
     }
   };
 
   return (
     <View style={[styles.container, !isActive && styles.inactiveContainer]}>
-      <LinearGradient
-        colors={isActive ? getCategoryGradient(motivation.category) : ['#f5f5f5', '#e0e0e0'] as const}
-        style={styles.gradient}
-      >
+      <View style={styles.card}>
         <View style={styles.header}>
-          <View style={styles.categoryBadge}>
-            <Text style={styles.categoryIcon}>
-              {getCategoryIcon(motivation.category)}
+          <View style={[styles.categoryBadge, { backgroundColor: isActive ? getCategoryColor(motivation.category) : '#e5e7eb' }]}>
+            <Text style={[styles.categoryText, { color: isActive ? '#ffffff' : '#6b7280' }]}>
+              {motivation.category}
             </Text>
-            <Text style={styles.categoryText}>{motivation.category}</Text>
           </View>
           <View style={styles.statusContainer}>
-            <Text style={styles.statusIcon}>{getStatusIcon()}</Text>
             <Text style={[styles.statusText, !isActive && styles.inactiveText]}>
               {getStatusText()}
             </Text>
@@ -147,37 +124,39 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
 
         <View style={styles.footer}>
           <Text style={[styles.dateTime, !isActive && styles.inactiveText]}>
-            ⏰ {formatDateTime(motivationDateTime)}
+            {formatDateTime(motivationDateTime)}
           </Text>
           <TouchableOpacity
             style={styles.deleteButton}
             onPress={handleDelete}
           >
-            <Text style={styles.deleteButtonText}>🗑️</Text>
+            <Text style={styles.deleteButtonText}>Xóa</Text>
           </TouchableOpacity>
         </View>
-      </LinearGradient>
+      </View>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    marginVertical: 8,
+    marginVertical: 6,
     marginHorizontal: 16,
-    borderRadius: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
-    shadowRadius: 8,
-    elevation: 5,
   },
   inactiveContainer: {
     opacity: 0.6,
   },
-  gradient: {
+  card: {
+    backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 16,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 2,
   },
   header: {
     flexDirection: 'row',
@@ -186,38 +165,24 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   categoryBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
   },
-  categoryIcon: {
-    fontSize: 16,
-    marginRight: 6,
-  },
   categoryText: {
     fontSize: 12,
     fontWeight: '600',
-    color: '#333',
   },
   statusContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    paddingHorizontal: 8,
+    backgroundColor: '#f3f4f6',
+    paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 12,
-  },
-  statusIcon: {
-    fontSize: 12,
-    marginRight: 4,
   },
   statusText: {
     fontSize: 11,
     fontWeight: '500',
-    color: '#333',
+    color: '#374151',
   },
   content: {
     marginBottom: 12,
@@ -225,18 +190,15 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#333',
+    color: '#1f2937',
     marginBottom: 8,
     lineHeight: 24,
-    textShadowColor: 'rgba(255,255,255,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 2,
   },
   goalText: {
     fontSize: 14,
-    color: '#555',
+    color: '#4b5563',
     fontStyle: 'italic',
-    backgroundColor: 'rgba(255,255,255,0.7)',
+    backgroundColor: '#f9fafb',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 8,
@@ -249,25 +211,27 @@ const styles = StyleSheet.create({
   },
   dateTime: {
     fontSize: 13,
-    color: '#666',
+    color: '#4b5563',
     fontWeight: '500',
-    backgroundColor: 'rgba(255,255,255,0.8)',
+    backgroundColor: '#f9fafb',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 6,
   },
   deleteButton: {
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: '#fef2f2',
+    borderRadius: 12,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderWidth: 1,
+    borderColor: '#fecaca',
   },
   deleteButtonText: {
-    fontSize: 16,
+    fontSize: 12,
+    color: '#dc2626',
+    fontWeight: '500',
   },
   inactiveText: {
-    color: '#999',
+    color: '#9ca3af',
   },
 });
