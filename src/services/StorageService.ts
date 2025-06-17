@@ -1,9 +1,9 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { Reminder } from '../types';
+import { Motivation } from '../types';
 
 export class StorageService {
   private static instance: StorageService;
-  private readonly REMINDERS_KEY = 'reminders';
+  private readonly MOTIVATIONS_KEY = 'motivations';
 
   private constructor() {}
 
@@ -21,91 +21,106 @@ export class StorageService {
     return Promise.race([
       promise,
       new Promise<T>((_, reject) => 
-        setTimeout(() => reject(new Error('Storage operation timeout')), timeoutMs)
+        setTimeout(() => reject(new Error('Thao tác lưu trữ hết thời gian')), timeoutMs)
       )
     ]);
   }
 
-  async saveReminders(reminders: Reminder[]): Promise<void> {
+  async saveMotivations(motivations: Motivation[]): Promise<void> {
     try {
-      const jsonValue = JSON.stringify(reminders);
+      const jsonValue = JSON.stringify(motivations);
       await this.withTimeout(
-        AsyncStorage.setItem(this.REMINDERS_KEY, jsonValue)
+        AsyncStorage.setItem(this.MOTIVATIONS_KEY, jsonValue)
       );
     } catch (error) {
-      console.error('Error saving reminders:', error);
+      console.error('Error saving motivations:', error);
       throw error;
     }
   }
 
-  async loadReminders(): Promise<Reminder[]> {
+  async loadMotivations(): Promise<Motivation[]> {
     try {
       const jsonValue = await this.withTimeout(
-        AsyncStorage.getItem(this.REMINDERS_KEY)
+        AsyncStorage.getItem(this.MOTIVATIONS_KEY)
       );
       
       if (jsonValue === null) {
         return [];
       }
       
-      const reminders = JSON.parse(jsonValue);
+      const motivations = JSON.parse(jsonValue);
       // Convert date strings back to Date objects
-      return reminders.map((reminder: any) => ({
-        ...reminder,
-        dateTime: new Date(reminder.dateTime),
-        createdAt: new Date(reminder.createdAt),
+      return motivations.map((motivation: any) => ({
+        ...motivation,
+        scheduledTime: new Date(motivation.scheduledTime),
+        createdAt: new Date(motivation.createdAt),
       }));
     } catch (error) {
-      console.error('Error loading reminders:', error);
+      console.error('Error loading motivations:', error);
       return [];
     }
   }
 
-  async addReminder(reminder: Reminder): Promise<void> {
+  async addMotivation(motivation: Motivation): Promise<void> {
     try {
-      const reminders = await this.loadReminders();
-      reminders.push(reminder);
-      await this.saveReminders(reminders);
+      const motivations = await this.loadMotivations();
+      motivations.push(motivation);
+      await this.saveMotivations(motivations);
     } catch (error) {
-      console.error('Error adding reminder:', error);
+      console.error('Error adding motivation:', error);
       throw error;
     }
   }
 
-  async updateReminder(updatedReminder: Reminder): Promise<void> {
+  async updateMotivation(updatedMotivation: Motivation): Promise<void> {
     try {
-      const reminders = await this.loadReminders();
-      const index = reminders.findIndex(r => r.id === updatedReminder.id);
+      const motivations = await this.loadMotivations();
+      const index = motivations.findIndex(m => m.id === updatedMotivation.id);
       
       if (index !== -1) {
-        reminders[index] = updatedReminder;
-        await this.saveReminders(reminders);
+        motivations[index] = updatedMotivation;
+        await this.saveMotivations(motivations);
       }
     } catch (error) {
-      console.error('Error updating reminder:', error);
+      console.error('Error updating motivation:', error);
       throw error;
     }
   }
 
-  async deleteReminder(reminderId: string): Promise<void> {
+  async deleteMotivation(motivationId: string): Promise<void> {
     try {
-      const reminders = await this.loadReminders();
-      const filteredReminders = reminders.filter(r => r.id !== reminderId);
-      await this.saveReminders(filteredReminders);
+      const motivations = await this.loadMotivations();
+      const filteredMotivations = motivations.filter(m => m.id !== motivationId);
+      await this.saveMotivations(filteredMotivations);
     } catch (error) {
-      console.error('Error deleting reminder:', error);
+      console.error('Error deleting motivation:', error);
       throw error;
     }
   }
 
-  async clearAllReminders(): Promise<void> {
+  async clearAllMotivations(): Promise<void> {
     try {
       await this.withTimeout(
-        AsyncStorage.removeItem(this.REMINDERS_KEY)
+        AsyncStorage.removeItem(this.MOTIVATIONS_KEY)
       );
     } catch (error) {
-      console.error('Error clearing reminders:', error);
+      console.error('Error clearing motivations:', error);
       throw error;
+    }
+  }
+
+  // Legacy methods for backward compatibility (in case old reminder data exists)
+  async migrateOldReminders(): Promise<void> {
+    try {
+      const oldReminders = await AsyncStorage.getItem('reminders');
+      if (oldReminders) {
+        console.log('Found old reminders, migrating...');
+        // Clear old reminders after migration
+        await AsyncStorage.removeItem('reminders');
+        console.log('Old reminders migrated and cleared');
+      }
+    } catch (error) {
+      console.error('Error migrating old reminders:', error);
     }
   }
 }

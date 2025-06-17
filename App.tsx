@@ -8,49 +8,34 @@ import {
   RefreshControl,
   TouchableOpacity,
   Alert,
+  ImageBackground,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
+import { LinearGradient } from 'expo-linear-gradient';
 
-import { AddReminderForm } from './src/components/AddReminderForm';
-import { ReminderItem } from './src/components/ReminderItem';
-import { AIGoalForm } from './src/components/AIGoalForm';
-import { SettingsModal } from './src/components/SettingsModal';
-import { useReminders } from './src/hooks/useReminders';
+import { GoalForm } from './src/components/GoalForm';
+import { MotivationItem } from './src/components/MotivationItem';
+import { useMotivation } from './src/hooks/useMotivation';
 import { NotificationService } from './src/services/NotificationService';
-import { SettingsService } from './src/services/SettingsService';
-import { Reminder } from './src/types';
+import { Motivation } from './src/types';
 
 export default function App() {
-  const [currentView, setCurrentView] = useState<'list' | 'add' | 'ai' | 'settings'>('list');
-  const [apiKey, setApiKey] = useState<string>('');
+  const [currentView, setCurrentView] = useState<'home' | 'goal'>('home');
   
   const {
-    reminders,
+    motivations,
     loading,
     error,
-    addReminder,
-    addMultipleReminders,
-    cancelReminder,
-    deleteReminder,
-    clearAllReminders,
-    getActiveReminders,
-    refreshReminders,
-  } = useReminders();
+    addGoal,
+    deleteMotivation,
+    clearAllMotivations,
+    getActiveMotivations,
+    refreshMotivations,
+  } = useMotivation();
 
   useEffect(() => {
     initializeApp();
-    loadSettings();
   }, []);
-
-  const loadSettings = async () => {
-    try {
-      const settingsService = SettingsService.getInstance();
-      const settings = await settingsService.getSettings();
-      setApiKey(settings.geminiApiKey || '');
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    }
-  };
 
   const initializeApp = async () => {
     try {
@@ -59,176 +44,122 @@ export default function App() {
       
       if (!hasPermission) {
         Alert.alert(
-          'Notification Permission Required',
-          'This app needs notification permission to send you reminders.',
+          'Thông báo cần thiết',
+          'Ứng dụng cần quyền thông báo để gửi lời nhắc động lực cho bạn.',
           [{ text: 'OK' }]
         );
       }
     } catch (error) {
       console.error('Error initializing app:', error);
-      Alert.alert('Error', 'Failed to initialize the app. Please restart.');
+      Alert.alert('Lỗi', 'Không thể khởi động ứng dụng. Vui lòng thử lại.');
     }
   };
 
-  const handleAddReminder = async (message: string, dateTime: Date): Promise<boolean> => {
+  const handleGoalSubmit = async (goal: string, timeframe: string): Promise<boolean> => {
     try {
-      const success = await addReminder(message, dateTime);
+      const success = await addGoal(goal, timeframe);
       if (success) {
-        setCurrentView('list');
+        setCurrentView('home');
+        Alert.alert('Thành công', 'Đã tạo kế hoạch động lực cho mục tiêu của bạn!');
         return true;
       }
       return false;
     } catch (error) {
-      return false;
-    }
-  };
-
-  const handleAIGoalSubmit = async (remindersToAdd: Reminder[]): Promise<boolean> => {
-    try {
-      const success = await addMultipleReminders(remindersToAdd);
-      if (success) {
-        setCurrentView('list');
-        Alert.alert('Success', `Created ${remindersToAdd.length} AI-generated reminders!`);
-        return true;
-      }
-      return false;
-    } catch (error) {
+      Alert.alert('Lỗi', 'Không thể tạo kế hoạch động lực');
       return false;
     }
   };
 
   const handleClearAll = () => {
-    if (reminders.length === 0) {
-      Alert.alert('Info', 'No reminders to clear');
+    if (motivations.length === 0) {
+      Alert.alert('Thông tin', 'Không có lời nhắc nào để xóa');
       return;
     }
 
     Alert.alert(
-      'Clear All Reminders',
-      `This will clear all ${reminders.length} reminders. This action cannot be undone.`,
+      'Xóa tất cả',
+      `Điều này sẽ xóa tất cả ${motivations.length} lời nhắc động lực. Bạn có chắc chắn?`,
       [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Clear All', style: 'destructive', onPress: clearAllReminders },
+        { text: 'Hủy', style: 'cancel' },
+        { text: 'Xóa tất cả', style: 'destructive', onPress: clearAllMotivations },
       ]
     );
   };
 
-  const handleSettingsSave = async (newApiKey: string) => {
-    try {
-      const settingsService = SettingsService.getInstance();
-      await settingsService.updateApiKey(newApiKey);
-      setApiKey(newApiKey);
-      setCurrentView('list');
-    } catch (error) {
-      Alert.alert('Error', 'Failed to save settings');
-    }
-  };
-
-  const renderReminderItem = ({ item }: { item: Reminder }) => (
-    <ReminderItem
-      reminder={item}
-      onDelete={deleteReminder}
-      onCancel={cancelReminder}
+  const renderMotivationItem = ({ item }: { item: Motivation }) => (
+    <MotivationItem
+      motivation={item}
+      onDelete={deleteMotivation}
     />
   );
 
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
-      <Text style={styles.emptyStateIcon}>🤖</Text>
-      <Text style={styles.emptyStateTitle}>No Reminders</Text>
+      <Text style={styles.emptyStateIcon}>🎯</Text>
+      <Text style={styles.emptyStateTitle}>Chưa có mục tiêu nào</Text>
       <Text style={styles.emptyStateText}>
-        Use FREE AI to create smart reminders or add them manually
+        Hãy đặt mục tiêu đầu tiên và để AI tạo ra những lời nhắc động lực cho bạn!
       </Text>
+      <TouchableOpacity
+        style={styles.startButton}
+        onPress={() => setCurrentView('goal')}
+      >
+        <Text style={styles.startButtonText}>🚀 Bắt đầu ngay</Text>
+      </TouchableOpacity>
     </View>
   );
 
   const renderHeader = () => (
-    <View style={styles.header}>
-      <View style={styles.headerTop}>
-        <Text style={styles.title}>AI Reminders</Text>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => setCurrentView('settings')}
-        >
-          <Text style={styles.settingsButtonText}>⚙️</Text>
-        </TouchableOpacity>
-      </View>
-      {!apiKey && (
-        <View style={styles.apiWarning}>
-          <Text style={styles.apiWarningText}>
-            🆓 Set up FREE Google Gemini API key in settings to use AI features
-          </Text>
-        </View>
-      )}
+    <LinearGradient
+      colors={['#667eea', '#764ba2']}
+      style={styles.header}
+    >
+      <Text style={styles.title}>💪 Motivation</Text>
+      <Text style={styles.subtitle}>Hành trình đạt mục tiêu của bạn</Text>
       <View style={styles.stats}>
-        <Text style={styles.statsText}>
-          Active: {getActiveReminders().length} | Total: {reminders.length}
-        </Text>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>{getActiveMotivations().length}</Text>
+          <Text style={styles.statLabel}>Đang theo dõi</Text>
+        </View>
+        <View style={styles.statItem}>
+          <Text style={styles.statNumber}>{motivations.length}</Text>
+          <Text style={styles.statLabel}>Tổng số</Text>
+        </View>
       </View>
-    </View>
+    </LinearGradient>
   );
 
-  if (currentView === 'add') {
+  if (currentView === 'goal') {
     return (
       <SafeAreaView style={styles.container}>
-        <ExpoStatusBar style="dark" />
-        <View style={styles.formHeader}>
+        <ExpoStatusBar style="light" />
+        <LinearGradient
+          colors={['#667eea', '#764ba2'] as const}
+          style={styles.formHeader}
+        >
           <TouchableOpacity
             style={styles.backButton}
-            onPress={() => setCurrentView('list')}
+            onPress={() => setCurrentView('home')}
           >
-            <Text style={styles.backButtonText}>← Back</Text>
+            <Text style={styles.backButtonText}>← Quay lại</Text>
           </TouchableOpacity>
-        </View>
-        <AddReminderForm onAddReminder={handleAddReminder} />
+          <Text style={styles.formTitle}>Đặt mục tiêu mới</Text>
+        </LinearGradient>
+        <GoalForm onSubmit={handleGoalSubmit} />
       </SafeAreaView>
     );
   }
 
-  if (currentView === 'ai') {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ExpoStatusBar style="dark" />
-        <View style={styles.formHeader}>
-          <TouchableOpacity
-            style={styles.backButton}
-            onPress={() => setCurrentView('list')}
-          >
-            <Text style={styles.backButtonText}>← Back</Text>
-          </TouchableOpacity>
-        </View>
-        <AIGoalForm 
-          onSubmit={handleAIGoalSubmit}
-          apiKey={apiKey}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  if (currentView === 'settings') {
-    return (
-      <SafeAreaView style={styles.container}>
-        <ExpoStatusBar style="dark" />
-        <SettingsModal
-          visible={true}
-          onClose={() => setCurrentView('list')}
-          onSave={handleSettingsSave}
-          initialApiKey={apiKey}
-        />
-      </SafeAreaView>
-    );
-  }
-
-  // Sort reminders: active first, then by date
-  const sortedReminders = [...reminders].sort((a, b) => {
+  // Sort motivations: active first, then by date
+  const sortedMotivations = [...motivations].sort((a, b) => {
     if (a.isActive && !b.isActive) return -1;
     if (!a.isActive && b.isActive) return 1;
-    return new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime();
+    return new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime();
   });
 
   return (
     <SafeAreaView style={styles.container}>
-      <ExpoStatusBar style="dark" />
+      <ExpoStatusBar style="light" />
       
       {renderHeader()}
       
@@ -237,50 +168,45 @@ export default function App() {
           <Text style={styles.errorText}>⚠️ {error}</Text>
           <TouchableOpacity 
             style={styles.retryButton} 
-            onPress={refreshReminders}
+            onPress={refreshMotivations}
           >
-            <Text style={styles.retryButtonText}>Retry</Text>
+            <Text style={styles.retryButtonText}>Thử lại</Text>
           </TouchableOpacity>
         </View>
       )}
 
       <FlatList
-        data={sortedReminders}
-        renderItem={renderReminderItem}
+        data={sortedMotivations}
+        renderItem={renderMotivationItem}
         keyExtractor={(item) => item.id}
         style={styles.list}
-        contentContainerStyle={reminders.length === 0 ? styles.emptyListContainer : styles.listContent}
+        contentContainerStyle={motivations.length === 0 ? styles.emptyListContainer : styles.listContent}
         ListEmptyComponent={renderEmptyState}
         refreshControl={
-          <RefreshControl refreshing={loading} onRefresh={refreshReminders} />
+          <RefreshControl refreshing={loading} onRefresh={refreshMotivations} />
         }
         showsVerticalScrollIndicator={false}
       />
 
       <View style={styles.bottomActions}>
         <TouchableOpacity
-          style={[styles.actionButton, styles.aiButton]}
-          onPress={() => setCurrentView('ai')}
-          disabled={!apiKey}
+          style={styles.newGoalButton}
+          onPress={() => setCurrentView('goal')}
         >
-          <Text style={[styles.aiButtonText, !apiKey && styles.disabledText]}>
-            🤖 FREE AI
-          </Text>
+          <LinearGradient
+            colors={['#4facfe', '#00f2fe'] as const}
+            style={styles.gradientButton}
+          >
+            <Text style={styles.newGoalButtonText}>🎯 Mục tiêu mới</Text>
+          </LinearGradient>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={[styles.actionButton, styles.addButton]}
-          onPress={() => setCurrentView('add')}
-        >
-          <Text style={styles.addButtonText}>+ Manual</Text>
-        </TouchableOpacity>
-        
-        {reminders.length > 0 && (
+        {motivations.length > 0 && (
           <TouchableOpacity
-            style={[styles.actionButton, styles.clearButton]}
+            style={styles.clearButton}
             onPress={handleClearAll}
           >
-            <Text style={styles.clearButtonText}>Clear All</Text>
+            <Text style={styles.clearButtonText}>Xóa tất cả</Text>
           </TouchableOpacity>
         )}
       </View>
@@ -291,68 +217,63 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f8f9fa',
   },
   header: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
-  },
-  headerTop: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
+    paddingVertical: 30,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
   title: {
-    fontSize: 28,
+    fontSize: 32,
     fontWeight: 'bold',
-    color: '#333',
-  },
-  settingsButton: {
-    padding: 8,
-  },
-  settingsButtonText: {
-    fontSize: 20,
-  },
-  apiWarning: {
-    backgroundColor: '#e8f5e8',
-    padding: 8,
-    borderRadius: 6,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#4CAF50',
-  },
-  apiWarningText: {
-    color: '#2e7d2e',
-    fontSize: 12,
+    color: '#fff',
     textAlign: 'center',
-    fontWeight: '500',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 16,
+    color: 'rgba(255,255,255,0.9)',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   stats: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  statItem: {
     alignItems: 'center',
   },
-  statsText: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '500',
+  statNumber: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  statLabel: {
+    fontSize: 12,
+    color: 'rgba(255,255,255,0.8)',
   },
   formHeader: {
-    backgroundColor: '#fff',
     paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e0e0e0',
+    paddingVertical: 20,
+    borderBottomLeftRadius: 20,
+    borderBottomRightRadius: 20,
   },
   backButton: {
     alignSelf: 'flex-start',
+    marginBottom: 10,
   },
   backButtonText: {
     fontSize: 16,
-    color: '#007AFF',
+    color: '#fff',
     fontWeight: '500',
+  },
+  formTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    textAlign: 'center',
   },
   list: {
     flex: 1,
@@ -370,41 +291,54 @@ const styles = StyleSheet.create({
     paddingHorizontal: 40,
   },
   emptyStateIcon: {
-    fontSize: 48,
-    marginBottom: 16,
+    fontSize: 64,
+    marginBottom: 20,
   },
   emptyStateTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#999',
-    marginBottom: 8,
+    color: '#666',
+    marginBottom: 12,
+    textAlign: 'center',
   },
   emptyStateText: {
     fontSize: 16,
-    color: '#666',
+    color: '#888',
     textAlign: 'center',
     lineHeight: 24,
+    marginBottom: 30,
+  },
+  startButton: {
+    backgroundColor: '#667eea',
+    paddingHorizontal: 30,
+    paddingVertical: 15,
+    borderRadius: 25,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   errorContainer: {
-    backgroundColor: '#f8d7da',
+    backgroundColor: '#fee',
     padding: 12,
     marginHorizontal: 16,
     marginVertical: 8,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#f5c6cb',
+    borderColor: '#fcc',
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   },
   errorText: {
-    color: '#721c24',
+    color: '#c33',
     fontSize: 14,
     flex: 1,
     marginRight: 12,
   },
   retryButton: {
-    backgroundColor: '#721c24',
+    backgroundColor: '#c33',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 4,
@@ -415,46 +349,40 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   bottomActions: {
-    flexDirection: 'row',
     padding: 16,
     backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#e0e0e0',
-    gap: 8,
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: -2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 5,
   },
-  actionButton: {
-    flex: 1,
+  newGoalButton: {
+    marginBottom: 12,
+  },
+  gradientButton: {
     paddingVertical: 16,
-    borderRadius: 8,
+    borderRadius: 12,
     alignItems: 'center',
   },
-  aiButton: {
-    backgroundColor: '#4CAF50',
-  },
-  addButton: {
-    backgroundColor: '#007AFF',
+  newGoalButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
   clearButton: {
-    backgroundColor: '#fff',
+    backgroundColor: 'transparent',
     borderWidth: 1,
     borderColor: '#dc3545',
-  },
-  aiButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  addButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
   },
   clearButtonText: {
     color: '#dc3545',
     fontSize: 14,
-    fontWeight: '600',
-  },
-  disabledText: {
-    color: '#ccc',
+    fontWeight: '500',
   },
 });

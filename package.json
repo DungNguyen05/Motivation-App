@@ -1,5 +1,5 @@
 {
-  "name": "ai-reminders-app",
+  "name": "motivation-app",
   "version": "1.0.0",
   "main": "node_modules/expo/AppEntry.js",
   "scripts": {
@@ -10,14 +10,13 @@
     "clear": "expo start --clear"
   },
   "dependencies": {
-    "@expo/ngrok": "^4.1.3",
     "@react-native-async-storage/async-storage": "~2.1.0",
-    "@react-native-community/datetimepicker": "8.3.0",
     "expo": "~53.0.0",
     "expo-constants": "~17.1.6",
     "expo-crypto": "~14.1.4",
     "expo-device": "~7.1.4",
     "expo-haptics": "~13.0.1",
+    "expo-linear-gradient": "~14.0.2",
     "expo-notifications": "~0.31.2",
     "expo-status-bar": "~2.2.3",
     "react": "19.0.0",

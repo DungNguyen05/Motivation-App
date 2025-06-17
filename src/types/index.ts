@@ -1,21 +1,35 @@
-export interface Reminder {
+export interface Motivation {
   id: string;
   message: string;
-  dateTime: Date;
+  scheduledTime: Date;
   notificationId?: string;
   isActive: boolean;
   createdAt: Date;
-  category?: string;
-  isAIGenerated?: boolean;
+  category: MotivationCategory;
+  goal: string;
 }
 
-export interface AppSettings {
-  openAIApiKey: string;
-}
-
-export type ReminderCategory = 
+export type MotivationCategory = 
   | 'Start'
   | 'Daily'
   | 'Weekly Review'
+  | 'Motivation'
   | 'Completion'
   | 'Custom';
+
+export interface MotivationPlan {
+  goal: string;
+  timeframe: string;
+  strategy: string;
+  motivations: Motivation[];
+  createdAt: Date;
+}
+
+export interface AppStats {
+  totalMotivations: number;
+  activeMotivations: number;
+  expiredMotivations: number;
+  completedGoals: number;
+  byCategory: { [key: string]: number };
+  byGoal: { [key: string]: number };
+}

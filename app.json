@@ -1,40 +1,43 @@
 {
   "expo": {
-    "name": "My Reminders",
-    "slug": "my-reminders-app",
+    "name": "Motivation",
+    "slug": "motivation-app",
     "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#667eea"
     },
     "assetBundlePatterns": ["**/*"],
     "platforms": ["ios", "android"],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.yourname.myreminders",
+      "bundleIdentifier": "com.yourname.motivation",
       "infoPlist": {
         "UIBackgroundModes": ["background-processing"],
-        "NSUserNotificationUsageDescription": "This app needs notification permission to send you reminders at the scheduled time."
+        "NSUserNotificationUsageDescription": "Ứng dụng cần quyền thông báo để gửi lời nhắc động lực cho bạn."
       }
     },
     "android": {
-      "package": "com.yourname.myreminders",
+      "package": "com.yourname.motivation",
       "permissions": [
         "android.permission.RECEIVE_BOOT_COMPLETED",
         "android.permission.VIBRATE",
         "android.permission.WAKE_LOCK",
         "android.permission.SCHEDULE_EXACT_ALARM"
-      ]
+      ],
+      "adaptiveIcon": {
+        "backgroundColor": "#667eea"
+      }
     },
     "web": {},
     "plugins": [
       [
         "expo-notifications",
         {
-          "color": "#ffffff",
-          "defaultChannel": "default"
+          "color": "#667eea",
+          "defaultChannel": "motivation"
         }
       ]
     ],
