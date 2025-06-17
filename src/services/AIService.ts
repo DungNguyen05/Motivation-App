@@ -91,61 +91,6 @@ export class AIService {
     }
   }
 
-  private generateReminderSchedule(goal: string, timeframe: string): {
-    message: string;
-    dateTime: Date;
-    category: string;
-  }[] {
-    const { days } = this.parseTimeframe(timeframe);
-    const now = new Date();
-    const reminders: { message: string; dateTime: Date; category: string; }[] = [];
-
-    // Start reminder (1 hour from now)
-    const startDate = new Date(now.getTime() + 60 * 60 * 1000);
-    reminders.push({
-      message: `Start working on: ${goal}`,
-      dateTime: startDate,
-      category: 'Start'
-    });
-
-    // Daily reminders for first week
-    for (let i = 1; i <= Math.min(7, days); i++) {
-      const date = new Date(now.getTime() + i * 24 * 60 * 60 * 1000);
-      date.setHours(9, 0, 0, 0);
-      
-      reminders.push({
-        message: `Daily progress: Work on ${goal}`,
-        dateTime: date,
-        category: 'Daily'
-      });
-    }
-
-    // Weekly reviews
-    const weeks = Math.floor(days / 7);
-    for (let i = 1; i <= Math.min(weeks, 4); i++) {
-      const date = new Date(now.getTime() + i * 7 * 24 * 60 * 60 * 1000);
-      date.setHours(10, 0, 0, 0);
-      
-      reminders.push({
-        message: `Week ${i} review: Check progress on ${goal}`,
-        dateTime: date,
-        category: 'Weekly Review'
-      });
-    }
-
-    // Final reminder
-    const finalDate = new Date(now.getTime() + (days - 1) * 24 * 60 * 60 * 1000);
-    finalDate.setHours(18, 0, 0, 0);
-    
-    reminders.push({
-      message: `Final check: Complete your goal - ${goal}!`,
-      dateTime: finalDate,
-      category: 'Completion'
-    });
-
-    return reminders.sort((a, b) => a.dateTime.getTime() - b.dateTime.getTime());
-  }
-
   async analyzeGoal(goal: string, timeframe: string): Promise<AIGoalAnalysis> {
     try {
       const prompt = `Create a strategy for this goal: "${goal}" in ${timeframe}.
@@ -189,7 +134,7 @@ Make each reminder specific and actionable for the goal "${goal}".`;
           throw new Error('No JSON found in AI response');
         }
       } catch (parseError) {
-        console.log('❌ Failed to parse JSON, using fallback:', parseError);
+        console.log('❌ Failed to parse JSON:', parseError);
         throw new Error('AI response was not in valid JSON format');
       }
 
@@ -244,16 +189,12 @@ Make each reminder specific and actionable for the goal "${goal}".`;
     } catch (error) {
       console.error('❌ Error in analyzeGoal:', error);
       
-      // Fallback strategy
-      console.log('🔄 Using fallback strategy...');
-      const strategy = `Simple strategy for "${goal}" in ${timeframe}:\n\n1. Start immediately with small steps\n2. Work consistently every day\n3. Review progress weekly\n4. Adjust approach as needed\n5. Celebrate completion`;
-      const reminders = this.generateReminderSchedule(goal, timeframe);
-
-      return {
-        reminders,
-        totalReminders: reminders.length,
-        strategy,
-      };
+      // Re-throw the error instead of using fallback
+      if (error instanceof Error) {
+        throw new Error(`AI analysis failed: ${error.message}`);
+      } else {
+        throw new Error('AI analysis failed with unknown error');
+      }
     }
   }
 
