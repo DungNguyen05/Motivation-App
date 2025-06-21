@@ -3,11 +3,11 @@ import {
   StyleSheet,
   Text,
   View,
-  FlatList,
   SafeAreaView,
   RefreshControl,
   TouchableOpacity,
   Alert,
+  ScrollView,
 } from 'react-native';
 import { StatusBar as ExpoStatusBar } from 'expo-status-bar';
 
@@ -119,13 +119,6 @@ export default function App() {
     );
   };
 
-  const renderMotivationItem = ({ item }: { item: Motivation }) => (
-    <MotivationItem
-      motivation={item}
-      onDelete={deleteMotivation}
-    />
-  );
-
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <View style={styles.emptyCard}>
@@ -145,31 +138,72 @@ export default function App() {
 
   const renderHeader = () => (
     <View style={styles.header}>
+      {/* Greeting Section */}
       <View style={styles.greetingSection}>
-        <Text style={styles.greeting}>{greeting}</Text>
-        <TouchableOpacity style={styles.bellButton}>
-          <Text style={styles.bellText}>🔔</Text>
-        </TouchableOpacity>
-      </View>
-      
-      <View style={styles.statsSection}>
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Time still available</Text>
-            <Text style={styles.statValue}>{getCurrentTime()}</Text>
-          </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>heating oven</Text>
-            <Text style={styles.statValue}>{getActiveMotivations().length}</Text>
-          </View>
+        <View style={styles.greetingTextContainer}>
+          <Text style={styles.greetingMain}>Good</Text>
+          <Text style={styles.greetingSecondary}>morning</Text>
+        </View>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.alarmButton}>
+            <Text style={styles.alarmIcon}>⏰</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bellButton}>
+            <Text style={styles.bellIcon}>🔔</Text>
+          </TouchableOpacity>
         </View>
       </View>
+      
+      {/* Main Device Card - Twink Oven */}
+      <View style={styles.mainDeviceCard}>
+        {/* Main Device Card Content */}
+        <View style={styles.cardContent}>
+          <View style={styles.deviceHeader}>
+            <Text style={styles.deviceTitle}>Twink Oven</Text>
+            <TouchableOpacity onPress={() => setCurrentView('goal')}>
+              <Text style={styles.addButton}>+</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.preHeatingBadge}>
+            <Text style={styles.preHeatingText}>Pre heating</Text>
+          </View>
+          
+          <View style={styles.deviceStats}>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>Time still{'\n'}available</Text>
+              <View style={styles.statIcon}>
+                <View style={styles.circularProgress} />
+              </View>
+              <Text style={styles.statValue}>{getCurrentTime()}</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statLabel}>heating{'\n'}oven</Text>
+              <View style={styles.statIcon}>
+                <View style={styles.circularProgress} />
+              </View>
+              <Text style={styles.statValue}>{getActiveMotivations().length}8°C</Text>
+            </View>
+          </View>
+        </View>
 
-      <View style={styles.otherDevicesSection}>
-        <Text style={styles.sectionTitle}>Others Devices</Text>
-        <TouchableOpacity onPress={() => setCurrentView('goal')}>
-          <Text style={styles.seeAllText}>See all</Text>
-        </TouchableOpacity>
+        {/* Bottom Actions inside Main Device Card */}
+        <View style={styles.cardBottomActions}>
+          <TouchableOpacity
+            style={styles.newGoalButton}
+            onPress={() => setCurrentView('goal')}
+          >
+            <Text style={styles.newGoalButtonText}>Mục tiêu mới</Text>
+          </TouchableOpacity>
+          
+          {motivations.length > 0 && (
+            <TouchableOpacity
+              style={styles.clearButton}
+              onPress={handleClearAll}
+            >
+              <Text style={styles.clearButtonText}>Xóa tất cả</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </View>
     </View>
   );
@@ -192,60 +226,33 @@ export default function App() {
     );
   }
 
-  const sortedMotivations = [...motivations].sort((a, b) => {
-    if (a.isActive && !b.isActive) return -1;
-    if (!a.isActive && b.isActive) return 1;
-    return new Date(a.scheduledTime).getTime() - new Date(b.scheduledTime).getTime();
-  });
-
   return (
     <SafeAreaView style={styles.container}>
       <ExpoStatusBar style="dark" />
       
-      {renderHeader()}
-      
-      {error && (
-        <View style={styles.errorContainer}>
-          <Text style={styles.errorText}>{error}</Text>
-          <TouchableOpacity 
-            style={styles.retryButton} 
-            onPress={refreshMotivations}
-          >
-            <Text style={styles.retryButtonText}>Thử lại</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
-      <FlatList
-        data={sortedMotivations}
-        renderItem={renderMotivationItem}
-        keyExtractor={(item) => item.id}
-        style={styles.list}
-        contentContainerStyle={motivations.length === 0 ? styles.emptyListContainer : styles.listContent}
-        ListEmptyComponent={renderEmptyState}
+      <ScrollView 
+        style={styles.scrollContainer}
         refreshControl={
           <RefreshControl refreshing={loading} onRefresh={refreshMotivations} />
         }
         showsVerticalScrollIndicator={false}
-      />
-
-      <View style={styles.bottomActions}>
-        <TouchableOpacity
-          style={styles.newGoalButton}
-          onPress={() => setCurrentView('goal')}
-        >
-          <Text style={styles.newGoalButtonText}>Mục tiêu mới</Text>
-        </TouchableOpacity>
+      >
+        {renderHeader()}
         
-        {motivations.length > 0 && (
-          <TouchableOpacity
-            style={styles.clearButton}
-            onPress={handleClearAll}
-          >
-            <Text style={styles.clearButtonText}>Xóa tất cả</Text>
-          </TouchableOpacity>
+        {error && (
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
+            <TouchableOpacity 
+              style={styles.retryButton} 
+              onPress={refreshMotivations}
+            >
+              <Text style={styles.retryButtonText}>Thử lại</Text>
+            </TouchableOpacity>
+          </View>
         )}
-      </View>
+
+        {motivations.length === 0 && renderEmptyState()}
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -255,23 +262,57 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#e9e9eb',
   },
+  scrollContainer: {
+    flex: 1,
+  },
   header: {
     backgroundColor: '#e9e9eb',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 20,
+    paddingHorizontal: 24,
+    paddingTop: 20,
+    paddingBottom: 24,
+    flex: 1, // Take all available space
+    justifyContent: 'flex-start', // Start from top
   },
+  
+  // Greeting Section
   greetingSection: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 30,
+    alignItems: 'flex-start',
+    marginBottom: 32,
   },
-  greeting: {
+  greetingTextContainer: {
+    flex: 1,
+  },
+  greetingMain: {
     fontSize: 44,
     fontWeight: 'bold',
     color: '#000000',
     letterSpacing: -1,
+    lineHeight: 52,
+  },
+  greetingSecondary: {
+    fontSize: 44,
+    fontWeight: '300',
+    color: '#999999',
+    letterSpacing: -1,
+    lineHeight: 52,
+    marginTop: -8,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  alarmButton: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    backgroundColor: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  alarmIcon: {
+    fontSize: 22,
   },
   bellButton: {
     width: 50,
@@ -281,51 +322,129 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  bellText: {
-    fontSize: 24,
+  bellIcon: {
+    fontSize: 22,
   },
-  statsSection: {
-    marginBottom: 30,
+
+  // Card Content
+  cardContent: {
+    flex: 1, // Take remaining space
   },
-  statsGrid: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  statCard: {
-    flex: 1,
+
+  // Main Device Card
+  mainDeviceCard: {
     backgroundColor: '#ffffff',
+    borderRadius: 24,
+    padding: 24,
+    marginHorizontal: -24, // Extend to full width
+    marginLeft: -24,
+    marginRight: -24,
+    flex: 1, // Take available space
+    minHeight: '80%', // 80% of screen height
+    justifyContent: 'space-between', // Distribute content evenly
+  },
+  deviceHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  deviceTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#000000',
+  },
+  addButton: {
+    fontSize: 28,
+    fontWeight: '300',
+    color: '#000000',
+  },
+  preHeatingBadge: {
+    backgroundColor: '#ea6c2b',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 24,
+  },
+  preHeatingText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  deviceStats: {
+    flexDirection: 'row',
+    gap: 16,
+    flex: 1, // Take remaining space in content
+    alignItems: 'center', // Center the stat boxes vertically
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#f8f8f8',
     borderRadius: 18,
     padding: 20,
-    minHeight: 100,
+    alignItems: 'flex-start',
   },
   statLabel: {
     fontSize: 17,
     fontWeight: '500',
     color: '#000000',
-    marginBottom: 12,
+    marginBottom: 16,
+    lineHeight: 22,
+  },
+  statIcon: {
+    width: 40,
+    height: 40,
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  circularProgress: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 3,
+    borderColor: '#000000',
+    borderRightColor: 'transparent',
+    transform: [{ rotate: '45deg' }],
   },
   statValue: {
-    fontSize: 36,
+    fontSize: 32,
     fontWeight: 'bold',
     color: '#000000',
     letterSpacing: -1,
   },
-  otherDevicesSection: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+
+  // Bottom Actions inside Card
+  cardBottomActions: {
+    gap: 12,
+  },
+  newGoalButton: {
+    backgroundColor: '#ea6c2b',
+    paddingVertical: 18,
+    borderRadius: 14,
     alignItems: 'center',
-    marginBottom: 10,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#000000',
-  },
-  seeAllText: {
+  newGoalButtonText: {
+    color: '#ffffff',
     fontSize: 17,
-    color: '#999999',
+    fontWeight: 'bold',
+  },
+  clearButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#ff3b30',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  clearButtonText: {
+    color: '#ff3b30',
+    fontSize: 15,
     fontWeight: '500',
   },
+
+  // Form styles
   formHeader: {
     backgroundColor: '#e9e9eb',
     paddingHorizontal: 20,
@@ -346,22 +465,14 @@ const styles = StyleSheet.create({
     color: '#000000',
     textAlign: 'center',
   },
-  list: {
-    flex: 1,
-    backgroundColor: '#e9e9eb',
-  },
-  listContent: {
-    paddingBottom: 20,
-    paddingHorizontal: 4,
-  },
-  emptyListContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-  },
+
+  // Empty state
   emptyState: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 40,
   },
   emptyCard: {
     backgroundColor: '#ffffff',
@@ -395,6 +506,8 @@ const styles = StyleSheet.create({
     fontSize: 17,
     fontWeight: 'bold',
   },
+
+  // Error handling
   errorContainer: {
     backgroundColor: '#ffffff',
     padding: 16,
@@ -422,35 +535,6 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#ffffff',
     fontSize: 13,
-    fontWeight: '500',
-  },
-  bottomActions: {
-    padding: 20,
-    backgroundColor: '#e9e9eb',
-  },
-  newGoalButton: {
-    backgroundColor: '#ea6c2b',
-    paddingVertical: 18,
-    borderRadius: 14,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  newGoalButtonText: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  clearButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#ff3b30',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    color: '#ff3b30',
-    fontSize: 15,
     fontWeight: '500',
   },
 });
