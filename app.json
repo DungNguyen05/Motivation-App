@@ -7,7 +7,7 @@
     "userInterfaceStyle": "light",
     "splash": {
       "resizeMode": "contain",
-      "backgroundColor": "#667eea"
+      "backgroundColor": "#e9e9eb"
     },
     "assetBundlePatterns": ["**/*"],
     "platforms": ["ios", "android"],
@@ -28,7 +28,7 @@
         "android.permission.SCHEDULE_EXACT_ALARM"
       ],
       "adaptiveIcon": {
-        "backgroundColor": "#667eea"
+        "backgroundColor": "#e9e9eb"
       }
     },
     "web": {},
@@ -36,7 +36,7 @@
       [
         "expo-notifications",
         {
-          "color": "#667eea",
+          "color": "#ea6c2b",
           "defaultChannel": "motivation"
         }
       ]

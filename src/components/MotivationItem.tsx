@@ -25,7 +25,6 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
     const diffHours = Math.ceil(diffMs / (1000 * 60 * 60));
     const diffMinutes = Math.ceil(diffMs / (1000 * 60));
     
-    // If it's in the past
     if (diffMs < 0) {
       return motivationDate.toLocaleDateString('vi-VN', {
         weekday: 'short',
@@ -36,7 +35,6 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
       });
     }
     
-    // If it's today
     if (diffDays === 0) {
       if (diffHours === 0) {
         return `Sau ${diffMinutes} phút`;
@@ -47,7 +45,6 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
       })}`;
     }
     
-    // If it's tomorrow
     if (diffDays === 1) {
       return `Ngày mai ${motivationDate.toLocaleTimeString('vi-VN', {
         hour: '2-digit',
@@ -55,7 +52,6 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
       })}`;
     }
     
-    // For other days
     return motivationDate.toLocaleDateString('vi-VN', {
       weekday: 'short',
       month: 'short',
@@ -86,52 +82,42 @@ export const MotivationItem: React.FC<MotivationItemProps> = ({
     return 'Đang hoạt động';
   };
 
-  const getCategoryColor = (category: string): string => {
-    switch (category) {
-      case 'Start': return '#f472b6';
-      case 'Daily': return '#60a5fa';
-      case 'Weekly Review': return '#34d399';
-      case 'Completion': return '#fbbf24';
-      case 'Motivation': return '#8b5cf6';
-      default: return '#9ca3af';
-    }
-  };
-
   return (
-    <View style={[styles.container, !isActive && styles.inactiveContainer]}>
-      <View style={styles.card}>
+    <View style={styles.container}>
+      <View style={[styles.card, !isActive && styles.inactiveCard]}>
         <View style={styles.header}>
-          <View style={[styles.categoryBadge, { backgroundColor: isActive ? getCategoryColor(motivation.category) : '#e5e7eb' }]}>
-            <Text style={[styles.categoryText, { color: isActive ? '#ffffff' : '#6b7280' }]}>
-              {motivation.category}
-            </Text>
-          </View>
-          <View style={styles.statusContainer}>
+          <View style={styles.leftSection}>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{motivation.category}</Text>
+            </View>
             <Text style={[styles.statusText, !isActive && styles.inactiveText]}>
               {getStatusText()}
             </Text>
           </View>
+          <TouchableOpacity 
+            style={styles.menuButton}
+            onPress={handleDelete}
+          >
+            <Text style={styles.menuDots}>•••</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.content}>
           <Text style={[styles.message, !isActive && styles.inactiveText]}>
             {motivation.message}
           </Text>
-          <Text style={[styles.goalText, !isActive && styles.inactiveText]}>
-            Mục tiêu: {motivation.goal}
-          </Text>
+          
+          <View style={styles.goalSection}>
+            <Text style={[styles.goalText, !isActive && styles.inactiveText]}>
+              Mục tiêu: {motivation.goal}
+            </Text>
+          </View>
         </View>
 
         <View style={styles.footer}>
-          <Text style={[styles.dateTime, !isActive && styles.inactiveText]}>
+          <Text style={[styles.timeText, !isActive && styles.inactiveText]}>
             {formatDateTime(motivationDateTime)}
           </Text>
-          <TouchableOpacity
-            style={styles.deleteButton}
-            onPress={handleDelete}
-          >
-            <Text style={styles.deleteButtonText}>Xóa</Text>
-          </TouchableOpacity>
         </View>
       </View>
     </View>
@@ -143,95 +129,83 @@ const styles = StyleSheet.create({
     marginVertical: 6,
     marginHorizontal: 16,
   },
-  inactiveContainer: {
-    opacity: 0.6,
-  },
   card: {
     backgroundColor: '#ffffff',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 2,
+    borderRadius: 18,
+    padding: 20,
+  },
+  inactiveCard: {
+    opacity: 0.6,
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
+    alignItems: 'flex-start',
+    marginBottom: 16,
+  },
+  leftSection: {
+    flex: 1,
   },
   categoryBadge: {
+    backgroundColor: '#ea6c2b',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 20,
+    alignSelf: 'flex-start',
+    marginBottom: 8,
   },
   categoryText: {
-    fontSize: 12,
+    fontSize: 13,
     fontWeight: '600',
-  },
-  statusContainer: {
-    backgroundColor: '#f3f4f6',
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 12,
+    color: '#ffffff',
   },
   statusText: {
-    fontSize: 11,
+    fontSize: 13,
+    color: '#999999',
     fontWeight: '500',
-    color: '#374151',
   },
-  content: {
-    marginBottom: 12,
-  },
-  message: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#1f2937',
-    marginBottom: 8,
-    lineHeight: 24,
-  },
-  goalText: {
-    fontSize: 14,
-    color: '#4b5563',
-    fontStyle: 'italic',
-    backgroundColor: '#f9fafb',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 8,
-    alignSelf: 'flex-start',
-  },
-  footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  menuButton: {
+    width: 32,
+    height: 32,
+    justifyContent: 'center',
     alignItems: 'center',
   },
-  dateTime: {
-    fontSize: 13,
-    color: '#4b5563',
-    fontWeight: '500',
-    backgroundColor: '#f9fafb',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 6,
+  menuDots: {
+    fontSize: 20,
+    color: '#999999',
+    fontWeight: 'bold',
   },
-  deleteButton: {
-    backgroundColor: '#fef2f2',
+  content: {
+    marginBottom: 16,
+  },
+  message: {
+    fontSize: 17,
+    fontWeight: '600',
+    color: '#000000',
+    lineHeight: 24,
+    marginBottom: 12,
+  },
+  goalSection: {
+    backgroundColor: '#f5f5f5',
     borderRadius: 12,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderWidth: 1,
-    borderColor: '#fecaca',
+    padding: 12,
   },
-  deleteButtonText: {
-    fontSize: 12,
-    color: '#dc2626',
+  goalText: {
+    fontSize: 15,
+    color: '#000000',
+    fontWeight: '500',
+  },
+  footer: {
+    borderTopWidth: 1,
+    borderTopColor: '#f0f0f0',
+    paddingTop: 12,
+  },
+  timeText: {
+    fontSize: 15,
+    color: '#999999',
     fontWeight: '500',
   },
   inactiveText: {
-    color: '#9ca3af',
+    color: '#cccccc',
   },
 });

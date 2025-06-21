@@ -77,21 +77,45 @@ export class AIService {
     } catch (error) {
       console.error('Error calling Gemini API:', error);
       if (error instanceof Error) {
-        throw error; // Re-throw with original message
+        throw error;
       } else {
         throw new Error('Không thể kết nối với AI. Vui lòng kiểm tra kết nối internet và thử lại.');
       }
     }
   }
 
+  async generateGreeting(timeOfDay: string): Promise<string> {
+    const prompt = `Generate a meaningful, friendly greeting in English for ${timeOfDay} time.
+
+Requirements:
+- Must be a proper, meaningful greeting (not nonsense like "night night")
+- Should be warm and welcoming
+- Maximum 3 words
+- Examples:
+  * Morning: "Good morning", "Rise and shine", "Morning sunshine"
+  * Afternoon: "Good afternoon", "Pleasant afternoon", "Lovely afternoon" 
+  * Evening: "Good evening", "Evening greetings", "Wonderful evening"
+  * Night: "Good night", "Sweet dreams", "Peaceful night"
+
+Return ONLY the greeting text, no quotes or extra words.`;
+
+    const response = await this.queryGemini(prompt);
+    
+    const greeting = response.trim().replace(/['"]/g, '').split('\n')[0];
+    
+    if (greeting && greeting.length > 0 && greeting.length < 20) {
+      return greeting;
+    }
+    
+    throw new Error('Invalid greeting generated');
+  }
+
   async analyzeGoal(goal: string, timeframe?: string): Promise<MotivationAnalysis> {
     try {
-      // Validate inputs
       if (!goal || !goal.trim()) {
         throw new Error('Vui lòng nhập mục tiêu của bạn.');
       }
 
-      // Create timeframe text for prompt
       const timeframeText = timeframe 
         ? `trong thời gian ${timeframe}` 
         : `(hãy tự động đề xuất thời gian phù hợp dựa trên mục tiêu)`;
@@ -130,10 +154,8 @@ Viết tất cả bằng tiếng Việt, tích cực và động lực. KHÔNG t
       
       const aiResponse = await this.queryGemini(prompt);
 
-      // Try to parse JSON response
       let parsedResponse;
       try {
-        // Look for JSON in the response
         const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
         if (jsonMatch) {
           const cleanResponse = jsonMatch[0];
@@ -148,7 +170,6 @@ Viết tất cả bằng tiếng Việt, tích cực và động lực. KHÔNG t
         throw new Error('AI trả về định dạng không hợp lệ. Vui lòng thử lại với mục tiêu khác hoặc đơn giản hóa mục tiêu.');
       }
 
-      // Validate response structure
       if (!parsedResponse.strategy || typeof parsedResponse.strategy !== 'string') {
         throw new Error('AI không tạo được chiến lược. Vui lòng thử lại.');
       }
@@ -157,7 +178,6 @@ Viết tất cả bằng tiếng Việt, tích cực và động lực. KHÔNG t
         throw new Error('AI không tạo được lời nhắc động lực. Vui lòng thử lại.');
       }
 
-      // Validate each motivation
       const validMotivations = parsedResponse.motivations.filter((motivation: any) => {
         return motivation.message && 
                typeof motivation.message === 'string' && 
@@ -176,13 +196,11 @@ Viết tất cả bằng tiếng Việt, tích cực và động lực. KHÔNG t
         throw new Error('AI tạo quá ít lời nhắc. Vui lòng thử lại hoặc mô tả mục tiêu chi tiết hơn.');
       }
 
-      // Convert to our format
       const now = new Date();
       const motivations = validMotivations.map((motivation: any) => {
         const daysFromNow = parseInt(motivation.days_from_now) || 1;
         const scheduledTime = new Date(now.getTime() + daysFromNow * 24 * 60 * 60 * 1000);
         
-        // Set times based on category
         switch (motivation.category) {
           case 'Start':
             scheduledTime.setHours(9, 0, 0, 0);
@@ -225,7 +243,6 @@ Viết tất cả bằng tiếng Việt, tích cực và động lực. KHÔNG t
     } catch (error) {
       console.error('Error in analyzeGoal:', error);
       
-      // Re-throw the error to be handled by the UI
       if (error instanceof Error) {
         throw error;
       } else {
@@ -234,7 +251,6 @@ Viết tất cả bằng tiếng Việt, tích cực và động lực. KHÔNG t
     }
   }
 
-  // Test Gemini connection
   async testConnection(): Promise<boolean> {
     try {
       console.log('Testing Gemini API connection...');

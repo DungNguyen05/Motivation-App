@@ -52,27 +52,27 @@ export const GoalForm: React.FC<GoalFormProps> = ({ onSubmit }) => {
     >
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
         <View style={styles.form}>
-          {/* Goal Input */}
           <View style={styles.section}>
             <Text style={styles.sectionTitle}>Mục tiêu của bạn là gì?</Text>
-            <TextInput
-              style={styles.goalInput}
-              placeholder="Nhập mục tiêu của bạn..."
-              value={goal}
-              onChangeText={setGoal}
-              multiline
-              maxLength={200}
-              editable={!isAnalyzing}
-              placeholderTextColor="#9ca3af"
-            />
-            <Text style={styles.characterCount}>{goal.length}/200</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.goalInput}
+                placeholder="Nhập mục tiêu của bạn..."
+                value={goal}
+                onChangeText={setGoal}
+                multiline
+                maxLength={200}
+                editable={!isAnalyzing}
+                placeholderTextColor="#999999"
+              />
+              <Text style={styles.characterCount}>{goal.length}/200</Text>
+            </View>
           </View>
 
-          {/* Timeframe */}
           <View style={styles.section}>
-            <Text style={styles.sectionTitle}>Thời gian thực hiện (tùy chọn)</Text>
+            <Text style={styles.sectionTitle}>Thời gian thực hiện</Text>
             <Text style={styles.sectionDescription}>
-              Nếu không chọn, AI sẽ tự động đề xuất thời gian phù hợp
+              Tùy chọn - AI sẽ tự động đề xuất nếu không chọn
             </Text>
             <View style={styles.timeframeGrid}>
               {timeframeOptions.map((option) => (
@@ -105,7 +105,6 @@ export const GoalForm: React.FC<GoalFormProps> = ({ onSubmit }) => {
             )}
           </View>
 
-          {/* Submit Button */}
           <TouchableOpacity
             style={[styles.submitButton, isAnalyzing && styles.submitButtonDisabled]}
             onPress={handleSubmit}
@@ -123,14 +122,13 @@ export const GoalForm: React.FC<GoalFormProps> = ({ onSubmit }) => {
             )}
           </TouchableOpacity>
 
-          {/* Info */}
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>AI sẽ giúp bạn:</Text>
             <Text style={styles.infoText}>
-              Phân tích mục tiêu và tạo kế hoạch chi tiết{'\n'}
-              Gửi lời nhắc động lực hàng ngày{'\n'}
-              Theo dõi tiến độ và điều chỉnh phù hợp{'\n'}
-              Tạo câu nói truyền cảm hứng
+              • Phân tích mục tiêu và tạo kế hoạch chi tiết{'\n'}
+              • Gửi lời nhắc động lực hàng ngày{'\n'}
+              • Theo dõi tiến độ và điều chỉnh phù hợp{'\n'}
+              • Tạo câu nói truyền cảm hứng
             </Text>
           </View>
         </View>
@@ -142,49 +140,46 @@ export const GoalForm: React.FC<GoalFormProps> = ({ onSubmit }) => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f9fafb',
+    backgroundColor: '#e9e9eb',
   },
   scrollView: {
     flex: 1,
   },
   form: {
-    padding: 24,
+    padding: 20,
   },
   section: {
     marginBottom: 32,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#000000',
     marginBottom: 8,
   },
   sectionDescription: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 16,
-    fontStyle: 'italic',
+    fontSize: 16,
+    color: '#999999',
+    marginBottom: 20,
+  },
+  inputContainer: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
   },
   goalInput: {
-    backgroundColor: '#ffffff',
-    borderRadius: 12,
-    padding: 16,
-    fontSize: 16,
-    minHeight: 100,
+    padding: 20,
+    fontSize: 17,
+    minHeight: 120,
     textAlignVertical: 'top',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    color: '#000000',
+    borderRadius: 18,
   },
   characterCount: {
-    fontSize: 12,
-    color: '#9ca3af',
+    fontSize: 14,
+    color: '#999999',
     textAlign: 'right',
-    marginTop: 8,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
   timeframeGrid: {
     gap: 12,
@@ -192,54 +187,46 @@ const styles = StyleSheet.create({
   timeframeButton: {
     backgroundColor: '#ffffff',
     alignItems: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    padding: 18,
+    borderRadius: 18,
   },
   timeframeButtonSelected: {
-    borderColor: '#1f2937',
-    backgroundColor: '#f3f4f6',
+    backgroundColor: '#ea6c2b',
   },
   timeframeText: {
-    fontSize: 16,
-    color: '#374151',
+    fontSize: 17,
+    color: '#000000',
     fontWeight: '500',
   },
   timeframeTextSelected: {
-    color: '#1f2937',
-    fontWeight: '600',
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
   clearTimeframeButton: {
     alignSelf: 'center',
-    marginTop: 12,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
+    marginTop: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
   },
   clearTimeframeText: {
-    fontSize: 14,
-    color: '#6b7280',
-    textDecorationLine: 'underline',
+    fontSize: 16,
+    color: '#999999',
+    fontWeight: '500',
   },
   submitButton: {
-    backgroundColor: '#1f2937',
-    paddingVertical: 18,
-    borderRadius: 12,
+    backgroundColor: '#ea6c2b',
+    paddingVertical: 20,
+    borderRadius: 16,
     alignItems: 'center',
     marginBottom: 24,
   },
   submitButtonDisabled: {
-    backgroundColor: '#9ca3af',
+    backgroundColor: '#cccccc',
   },
   submitButtonText: {
     color: '#ffffff',
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: 'bold',
   },
   loadingContainer: {
     flexDirection: 'row',
@@ -252,21 +239,19 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   infoBox: {
-    backgroundColor: '#f0fdf4',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
+    backgroundColor: '#ffffff',
+    padding: 20,
+    borderRadius: 18,
   },
   infoTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#166534',
-    marginBottom: 8,
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#000000',
+    marginBottom: 12,
   },
   infoText: {
-    fontSize: 14,
-    color: '#166534',
-    lineHeight: 20,
+    fontSize: 16,
+    color: '#000000',
+    lineHeight: 24,
   },
 });
