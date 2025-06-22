@@ -31,7 +31,6 @@ export default function App() {
     error,
     addGoal,
     deleteMotivation,
-    clearAllMotivations,
     getActiveMotivations,
     refreshMotivations,
   } = useMotivation();
@@ -106,22 +105,6 @@ export default function App() {
     }
   };
 
-  const handleClearAll = () => {
-    if (motivations.length === 0) {
-      Alert.alert('Thông tin', 'Không có lời nhắc nào để xóa');
-      return;
-    }
-
-    Alert.alert(
-      'Xóa tất cả',
-      `Điều này sẽ xóa tất cả ${motivations.length} lời nhắc động lực. Bạn có chắc chắn?`,
-      [
-        { text: 'Hủy', style: 'cancel' },
-        { text: 'Xóa tất cả', style: 'destructive', onPress: clearAllMotivations },
-      ]
-    );
-  };
-
   const renderEmptyState = () => (
     <View style={styles.emptyStateContent}>
       <Text style={styles.emptyStateTitle}>Chưa có mục tiêu nào</Text>
@@ -153,10 +136,10 @@ export default function App() {
         </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity>
-            <ClockIconLight size={25} />
+            <ClockIconLight size={32} />
           </TouchableOpacity>
           <TouchableOpacity>
-            <BellIconDark size={25} />
+            <BellIconDark size={32} />
           </TouchableOpacity>
         </View>
       </View>
@@ -166,13 +149,17 @@ export default function App() {
         {/* Card Content */}
         <View style={styles.cardContent}>
           <View style={styles.deviceHeader}>
-            <Text style={styles.deviceTitle}>Twink Oven</Text>
-            <TouchableOpacity onPress={() => setCurrentView('goal')}>
-              <Text style={styles.addButton}>+</Text>
+            <Text style={styles.deviceTitle}>Your Goals</Text>
+            <TouchableOpacity
+              onPress={() => setCurrentView('goal')}
+              style={styles.circularButton}
+            >
+              <Text style={styles.plusText}>+</Text>
             </TouchableOpacity>
+
           </View>
           <View style={styles.preHeatingBadge}>
-            <Text style={styles.preHeatingText}>Pre heating</Text>
+            <Text style={styles.preHeatingText}>3 Goals Available</Text>
           </View>
           
           <View style={styles.deviceStats}>
@@ -192,27 +179,72 @@ export default function App() {
             </View>
           </View>
 
-          {/* Empty state content or motivations list */}
-          {motivations.length === 0 && renderEmptyState()}
-        </View>
-
-        {/* Bottom Actions - Fixed at bottom */}
-        <View style={styles.cardBottomActions}>
-          <TouchableOpacity
-            style={styles.newGoalButton}
-            onPress={() => setCurrentView('goal')}
-          >
-            <Text style={styles.newGoalButtonText}>Mục tiêu mới</Text>
-          </TouchableOpacity>
-          
-          {motivations.length > 0 && (
-            <TouchableOpacity
-              style={styles.clearButton}
-              onPress={handleClearAll}
-            >
-              <Text style={styles.clearButtonText}>Xóa tất cả</Text>
-            </TouchableOpacity>
-          )}
+          {/* Goals Section */}
+          <View style={styles.goalsSection}>
+            <View style={styles.goalsSectionHeader}>
+              <Text style={styles.goalsSectionTitle}>Running</Text>
+              {motivations.length > 0 && (
+                <TouchableOpacity>
+                  <Text style={styles.seeAllText}>See all</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+            
+            {motivations.length === 0 ? (
+              <View style={styles.emptyGoalsState}>
+                <View style={styles.emptyGoalsIcon}>
+                  <Text style={styles.emptyGoalsIconText}>🎯</Text>
+                </View>
+                <Text style={styles.emptyGoalsTitle}>No goals yet</Text>
+                <Text style={styles.emptyGoalsText}>
+                  Let's add your first goal and start your journey!
+                </Text>
+                <TouchableOpacity
+                  style={styles.addGoalButton}
+                  onPress={() => setCurrentView('goal')}
+                >
+                  <Text style={styles.addGoalButtonText}>+ Add Goal</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <ScrollView 
+                style={styles.goalsContainer}
+                showsVerticalScrollIndicator={false}
+              >
+                {motivations.slice(0, 3).map((motivation) => (
+                  <View key={motivation.id} style={styles.goalCard}>
+                    <View style={styles.goalCardHeader}>
+                      <View style={styles.goalCategoryBadge}>
+                        <Text style={styles.goalCategoryText}>{motivation.category}</Text>
+                      </View>
+                      <TouchableOpacity 
+                        style={styles.goalMenuButton}
+                        onPress={() => deleteMotivation(motivation.id)}
+                      >
+                        <Text style={styles.goalMenuDots}>•••</Text>
+                      </TouchableOpacity>
+                    </View>
+                    <Text style={styles.goalText}>{motivation.goal}</Text>
+                    <Text style={styles.goalMessage}>{motivation.message}</Text>
+                    <Text style={styles.goalTime}>
+                      {new Date(motivation.scheduledTime).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                      })}
+                    </Text>
+                  </View>
+                ))}
+                
+                {motivations.length > 3 && (
+                  <TouchableOpacity style={styles.viewMoreGoals}>
+                    <Text style={styles.viewMoreGoalsText}>View {motivations.length - 3} more goals</Text>
+                  </TouchableOpacity>
+                )}
+              </ScrollView>
+            )}
+          </View>
         </View>
 
         {/* Error overlay inside white container */}
@@ -273,27 +305,28 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     paddingHorizontal: 24,
-    paddingTop: 20,
-    paddingBottom: 32,
+    paddingTop: 0,
+    paddingBottom: 5,
     backgroundColor: '#f1f2ee',
   },
   greetingTextContainer: {
     flex: 1,
+    marginTop: -3
   },
   greetingMain: {
-    fontSize: 44,
+    fontSize: 34,
     fontWeight: 'bold',
     color: '#4a4a49',
     letterSpacing: 0,
     lineHeight: 52,
   },
   greetingSecondary: {
-    fontSize: 44,
+    fontSize: 34,
     fontWeight: '600',
     color: '#999999',
     letterSpacing: 0,
     lineHeight: 52,
-    marginTop: -8,
+    marginTop: -18,
   },
   headerButtons: {
     flexDirection: 'row',
@@ -311,7 +344,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingBottom: 24,
     flex: 1,
-    justifyContent: 'space-between',
   },
   
   // Card Content
@@ -327,20 +359,31 @@ const styles = StyleSheet.create({
   deviceTitle: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#454545',
   },
-  addButton: {
-    fontSize: 28,
-    fontWeight: '300',
-    color: '#000000',
+  circularButton: {
+    backgroundColor: '#f8f8f6', // hoặc màu bạn muốn
+    width: 52,
+    height: 52,
+    borderRadius: 26, // bán kính = 1/2 chiều rộng để tạo hình tròn
+    justifyContent: 'center',
+    alignItems: 'center',
   },
+  
+  plusText: {
+    fontSize: 35,
+    color: '#1b1b1b', // màu chữ, nên là trắng nếu nền tối
+    lineHeight: 38,
+  },
+  
   preHeatingBadge: {
     backgroundColor: '#ea6c2b',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
     alignSelf: 'flex-start',
     marginBottom: 24,
+    marginTop: -15
   },
   preHeatingText: {
     color: '#ffffff',
@@ -362,7 +405,7 @@ const styles = StyleSheet.create({
   statLabel: {
     fontSize: 17,
     fontWeight: '500',
-    color: '#000000',
+    color: '#454545',
     marginBottom: 16,
     lineHeight: 22,
   },
@@ -378,14 +421,14 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     borderWidth: 3,
-    borderColor: '#000000',
+    borderColor: '#454545',
     borderRightColor: 'transparent',
     transform: [{ rotate: '45deg' }],
   },
   statValue: {
     fontSize: 32,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#454545',
     letterSpacing: -1,
   },
 
@@ -399,7 +442,7 @@ const styles = StyleSheet.create({
   emptyStateTitle: {
     fontSize: 22,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#454545',
     marginBottom: 12,
     textAlign: 'center',
   },
@@ -423,35 +466,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 
-  // Bottom Actions - Fixed at bottom of white card
-  cardBottomActions: {
-    gap: 12,
-  },
-  newGoalButton: {
-    backgroundColor: '#ea6c2b',
-    paddingVertical: 18,
-    borderRadius: 14,
-    alignItems: 'center',
-  },
-  newGoalButtonText: {
-    color: '#ffffff',
-    fontSize: 17,
-    fontWeight: 'bold',
-  },
-  clearButton: {
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: '#ff3b30',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  clearButtonText: {
-    color: '#ff3b30',
-    fontSize: 15,
-    fontWeight: '500',
-  },
-
   // Form styles
   formHeader: {
     backgroundColor: '#e9e9eb',
@@ -464,13 +478,13 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     fontSize: 17,
-    color: '#000000',
+    color: '#454545',
     fontWeight: '500',
   },
   formTitle: {
     fontSize: 28,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#454545',
     textAlign: 'center',
   },
 
@@ -505,6 +519,140 @@ const styles = StyleSheet.create({
   retryButtonText: {
     color: '#ffffff',
     fontSize: 13,
+    fontWeight: '500',
+  },
+
+  // Goals Section Styles
+  goalsSection: {
+    marginTop: -5,
+    flex: 1,
+  },
+  goalsSectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+    paddingHorizontal: 4,
+  },
+  goalsSectionTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#454545',
+  },
+  seeAllText: {
+    fontSize: 16,
+    color: '#999999',
+    fontWeight: '500',
+  },
+
+  // Empty Goals State
+  emptyGoalsState: {
+    alignItems: 'center',
+    paddingVertical: 40,
+    paddingHorizontal: 20,
+  },
+  emptyGoalsIcon: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#f8f8f8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  emptyGoalsIconText: {
+    fontSize: 28,
+  },
+  emptyGoalsTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#454545',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  emptyGoalsText: {
+    fontSize: 15,
+    color: '#999999',
+    textAlign: 'center',
+    lineHeight: 22,
+    marginBottom: 24,
+  },
+  addGoalButton: {
+    backgroundColor: '#ea6c2b',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 20,
+  },
+  addGoalButtonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+
+  // Goals List Styles
+  goalsContainer: {
+    maxHeight: 300,
+  },
+  goalCard: {
+    backgroundColor: '#f8f8f8',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+  },
+  goalCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: 8,
+  },
+  goalCategoryBadge: {
+    backgroundColor: '#ea6c2b',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  goalCategoryText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#ffffff',
+  },
+  goalMenuButton: {
+    width: 24,
+    height: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  goalMenuDots: {
+    fontSize: 16,
+    color: '#999999',
+    fontWeight: 'bold',
+  },
+  goalText: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#454545',
+    marginBottom: 4,
+  },
+  goalMessage: {
+    fontSize: 13,
+    color: '#666666',
+    lineHeight: 18,
+    marginBottom: 8,
+  },
+  goalTime: {
+    fontSize: 12,
+    color: '#999999',
+    fontWeight: '500',
+  },
+  viewMoreGoals: {
+    backgroundColor: '#f0f0f0',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+  },
+  viewMoreGoalsText: {
+    fontSize: 14,
+    color: '#666666',
     fontWeight: '500',
   },
 });

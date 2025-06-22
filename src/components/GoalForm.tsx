@@ -154,7 +154,7 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#454545',
     marginBottom: 8,
   },
   sectionDescription: {
@@ -171,7 +171,7 @@ const styles = StyleSheet.create({
     fontSize: 17,
     minHeight: 120,
     textAlignVertical: 'top',
-    color: '#000000',
+    color: '#454545',
     borderRadius: 18,
   },
   characterCount: {
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   timeframeText: {
     fontSize: 17,
-    color: '#000000',
+    color: '#454545',
     fontWeight: '500',
   },
   timeframeTextSelected: {
@@ -246,12 +246,12 @@ const styles = StyleSheet.create({
   infoTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#000000',
+    color: '#454545',
     marginBottom: 12,
   },
   infoText: {
     fontSize: 16,
-    color: '#000000',
+    color: '#454545',
     lineHeight: 24,
   },
 });

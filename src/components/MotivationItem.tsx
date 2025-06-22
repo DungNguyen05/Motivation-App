@@ -181,7 +181,7 @@ const styles = StyleSheet.create({
   message: {
     fontSize: 17,
     fontWeight: '600',
-    color: '#000000',
+    color: '#454545',
     lineHeight: 24,
     marginBottom: 12,
   },
@@ -192,7 +192,7 @@ const styles = StyleSheet.create({
   },
   goalText: {
     fontSize: 15,
-    color: '#000000',
+    color: '#454545',
     fontWeight: '500',
   },
   footer: {

@@ -24,27 +24,29 @@ const iconStyles = StyleSheet.create({
   // Container styles for different button types
   lightBackground: {
     backgroundColor: 'rgba(255, 255, 255, 0.8)',
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    borderRadius: 50,
+    width: 52,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 11
   },
   
   darkBackground: {
     backgroundColor: '#474749',
-    borderRadius: 25,
-    width: 50,
-    height: 50,
+    borderRadius: 50,
+    width: 52,
+    height: 52,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 12
   },
 });
 
 // Clock/Alarm Icon Component
 export const ClockIcon: React.FC<IconProps> = ({ 
   size = 22, 
-  color = "#000000", 
+  color = "#454545", 
   style 
 }) => (
   <View style={[iconStyles.clockIcon, style]}>
@@ -57,7 +59,7 @@ export const ClockIcon: React.FC<IconProps> = ({
 // Bell Icon Component
 export const BellIcon: React.FC<IconProps> = ({ 
   size = 22, 
-  color = "#000000", 
+  color = "#454545", 
   style 
 }) => (
   <View style={[iconStyles.bellIcon, style]}>
@@ -73,7 +75,7 @@ export const ClockIconLight: React.FC<Omit<IconProps, 'color'>> = ({
   style 
 }) => (
   <View style={[iconStyles.lightBackground, style]}>
-    <ClockIcon size={size} color="#000000" />
+    <ClockIcon size={size} color="#454545" />
   </View>
 );
 
