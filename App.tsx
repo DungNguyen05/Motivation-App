@@ -23,7 +23,7 @@ import { AIService } from './src/services/AIService';
 
 export default function App() {
   const [currentView, setCurrentView] = useState<'home' | 'goal'>('home');
-  const [greeting, setGreeting] = useState('Good morning');
+  const [greeting, setGreeting] = useState('Hello there');
   
   const {
     motivations,
@@ -142,8 +142,14 @@ export default function App() {
       {/* Greeting Section - Fixed height */}
       <View style={styles.greetingSection}>
         <View style={styles.greetingTextContainer}>
-          <Text style={styles.greetingMain}>Good</Text>
-          <Text style={styles.greetingSecondary}>morning</Text>
+          {greeting.split(' ').map((word, index) => (
+            <Text 
+              key={index}
+              style={index === 0 ? styles.greetingMain : styles.greetingSecondary}
+            >
+              {word}
+            </Text>
+          ))}
         </View>
         <View style={styles.headerButtons}>
           <TouchableOpacity>
@@ -255,7 +261,7 @@ export default function App() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#e9e9eb',
+    backgroundColor: '#f1f2ee',
   },
   fullHeightContainer: {
     flex: 1,
@@ -269,7 +275,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     paddingTop: 20,
     paddingBottom: 32,
-    backgroundColor: '#e9e9eb',
+    backgroundColor: '#f1f2ee',
   },
   greetingTextContainer: {
     flex: 1,
@@ -277,15 +283,15 @@ const styles = StyleSheet.create({
   greetingMain: {
     fontSize: 44,
     fontWeight: 'bold',
-    color: '#000000',
-    letterSpacing: -1,
+    color: '#4a4a49',
+    letterSpacing: 0,
     lineHeight: 52,
   },
   greetingSecondary: {
     fontSize: 44,
-    fontWeight: '300',
+    fontWeight: '600',
     color: '#999999',
-    letterSpacing: -1,
+    letterSpacing: 0,
     lineHeight: 52,
     marginTop: -8,
   },
@@ -297,8 +303,8 @@ const styles = StyleSheet.create({
   // Main Device Card - Full height to bottom
   mainDeviceCard: {
     backgroundColor: '#ffffff',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    borderTopLeftRadius: 35,
+    borderTopRightRadius: 35,
     borderBottomLeftRadius: 0,
     borderBottomRightRadius: 0,
     paddingTop: 24,

@@ -96,7 +96,7 @@ Requirements:
   * Afternoon: "Good afternoon", "Pleasant afternoon", "Lovely afternoon" 
   * Evening: "Good evening", "Evening greetings", "Wonderful evening"
   * Night: "Good night", "Sweet dreams", "Peaceful night"
-
+- Do not include punctuation
 Return ONLY the greeting text, no quotes or extra words.`;
 
     const response = await this.queryGemini(prompt);
